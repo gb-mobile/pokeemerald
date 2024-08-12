@@ -209,7 +209,8 @@ void EvolutionScene(struct Pokemon *mon, u16 postEvoSpecies, bool8 canStopEvo, u
 {
     u8 name[POKEMON_NAME_BUFFER_SIZE];
     u16 currSpecies;
-    u32 trainerId, personality;
+    u32 personality;
+    bool32 isShiny;
     u8 id;
     u8 metGame;
 
@@ -256,15 +257,15 @@ void EvolutionScene(struct Pokemon *mon, u16 postEvoSpecies, bool8 canStopEvo, u
 
     // preEvo sprite
     currSpecies = GetMonData(mon, MON_DATA_SPECIES);
-    trainerId = GetMonData(mon, MON_DATA_OT_ID);
+    isShiny = GetMonData(mon, MON_DATA_IS_SHINY);
     personality = GetMonData(mon, MON_DATA_PERSONALITY);
     metGame = GetMonData(mon, MON_DATA_MET_GAME);
-    LoadSpecialPokePic(gMonSpritesGfxPtr->sprites.ptr[B_POSITION_OPPONENT_LEFT],
+    LoadSpecialPokePic(gMonSpritesGfxPtr->spritesGfx[B_POSITION_OPPONENT_LEFT],
                         currSpecies,
                         personality,
                         TRUE,
                         metGame);
-    LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(currSpecies, trainerId, personality), OBJ_PLTT_ID(1), PLTT_SIZE_4BPP);
+    LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(currSpecies, isShiny, personality), OBJ_PLTT_ID(1), PLTT_SIZE_4BPP);
 
     SetMultiuseSpriteTemplateToPokemon(currSpecies, B_POSITION_OPPONENT_LEFT);
     gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable;
@@ -275,12 +276,12 @@ void EvolutionScene(struct Pokemon *mon, u16 postEvoSpecies, bool8 canStopEvo, u
     gSprites[id].invisible = TRUE;
 
     // postEvo sprite
-    LoadSpecialPokePic(gMonSpritesGfxPtr->sprites.ptr[B_POSITION_OPPONENT_RIGHT],
+    LoadSpecialPokePic(gMonSpritesGfxPtr->spritesGfx[B_POSITION_OPPONENT_RIGHT],
                         postEvoSpecies,
                         personality,
                         TRUE,
                         metGame);
-    LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(postEvoSpecies, trainerId, personality), OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
+    LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(postEvoSpecies, isShiny, personality), OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
 
     SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_RIGHT);
     gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable;
@@ -314,11 +315,12 @@ static void CB2_EvolutionSceneLoadGraphics(void)
 {
     u8 id, metGame;
     u16 postEvoSpecies;
-    u32 trainerId, personality;
+    u32 personality;
     struct Pokemon *mon = &gPlayerParty[gTasks[sEvoStructPtr->evoTaskId].tPartyId];
+    bool8 isShiny;
 
     postEvoSpecies = gTasks[sEvoStructPtr->evoTaskId].tPostEvoSpecies;
-    trainerId = GetMonData(mon, MON_DATA_OT_ID);
+    isShiny = GetMonData(mon, MON_DATA_IS_SHINY);
     personality = GetMonData(mon, MON_DATA_PERSONALITY);
     metGame = GetMonData(mon, MON_DATA_MET_GAME);
 
@@ -353,12 +355,12 @@ static void CB2_EvolutionSceneLoadGraphics(void)
     FreeAllSpritePalettes();
     gReservedSpritePaletteCount = 4;
 
-    LoadSpecialPokePic(gMonSpritesGfxPtr->sprites.ptr[B_POSITION_OPPONENT_RIGHT],
+    LoadSpecialPokePic(gMonSpritesGfxPtr->spritesGfx[B_POSITION_OPPONENT_RIGHT],
                         postEvoSpecies,
                         personality,
                         TRUE,
                         metGame);
-    LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(postEvoSpecies, trainerId, personality), OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
+    LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(postEvoSpecies, isShiny, personality), OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
 
     SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_RIGHT);
     gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable;
@@ -422,15 +424,15 @@ static void CB2_TradeEvolutionSceneLoadGraphics(void)
         break;
     case 4:
         {
-            u32 trainerId = GetMonData(mon, MON_DATA_OT_ID);
+            bool8 isShiny = GetMonData(mon, MON_DATA_IS_SHINY);
             u32 personality = GetMonData(mon, MON_DATA_PERSONALITY);
             u8 metGame = GetMonData(mon, MON_DATA_MET_GAME);
-            LoadSpecialPokePic(gMonSpritesGfxPtr->sprites.ptr[B_POSITION_OPPONENT_RIGHT],
+            LoadSpecialPokePic(gMonSpritesGfxPtr->spritesGfx[B_POSITION_OPPONENT_RIGHT],
                                 postEvoSpecies,
                                 personality,
                                 TRUE,
                                 metGame);
-            LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(postEvoSpecies, trainerId, personality), OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
+            LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(postEvoSpecies, isShiny, personality), OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
             gMain.state++;
         }
         break;
@@ -472,8 +474,9 @@ void TradeEvolutionScene(struct Pokemon *mon, u16 postEvoSpecies, u8 preEvoSprit
 {
     u8 name[POKEMON_NAME_BUFFER_SIZE];
     u16 currSpecies;
-    u32 trainerId, personality;
+    u32 personality;
     u8 id, metGame;
+    bool8 isShiny;
 
     GetMonData(mon, MON_DATA_NICKNAME, name);
     StringCopy_Nickname(gStringVar1, name);
@@ -484,19 +487,19 @@ void TradeEvolutionScene(struct Pokemon *mon, u16 postEvoSpecies, u8 preEvoSprit
     // preEvo sprite
     currSpecies = GetMonData(mon, MON_DATA_SPECIES);
     personality = GetMonData(mon, MON_DATA_PERSONALITY);
-    trainerId = GetMonData(mon, MON_DATA_OT_ID);
+    isShiny = GetMonData(mon, MON_DATA_IS_SHINY);
     metGame = GetMonData(mon, MON_DATA_MET_GAME);
 
     sEvoStructPtr = AllocZeroed(sizeof(struct EvoInfo));
     sEvoStructPtr->preEvoSpriteId = preEvoSpriteId;
 
-    LoadSpecialPokePic(gMonSpritesGfxPtr->sprites.ptr[B_POSITION_OPPONENT_LEFT],
+    LoadSpecialPokePic(gMonSpritesGfxPtr->spritesGfx[B_POSITION_OPPONENT_LEFT],
                         postEvoSpecies,
                         personality,
                         TRUE,
                         metGame);
 
-    LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(postEvoSpecies, trainerId, personality), OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
+    LoadCompressedPalette(GetMonSpritePalFromSpeciesAndPersonality(postEvoSpecies, isShiny, personality), OBJ_PLTT_ID(2), PLTT_SIZE_4BPP);
 
     SetMultiuseSpriteTemplateToPokemon(postEvoSpecies, B_POSITION_OPPONENT_LEFT);
     gMultiuseSpriteTemplate.affineAnims = gDummySpriteAffineAnimTable;
@@ -583,7 +586,7 @@ static void CreateShedinja(u16 preEvoSpecies, struct Pokemon *mon)
 
         for (i = MON_DATA_COOL_RIBBON; i < MON_DATA_COOL_RIBBON + CONTEST_CATEGORIES_COUNT; i++)
             SetMonData(&gPlayerParty[gPlayerPartyCount], i, &data);
-        for (i = MON_DATA_CHAMPION_RIBBON; i <= MON_DATA_UNUSED_RIBBONS; i++)
+        for (i = MON_DATA_CHAMPION_RIBBON; i <= MON_DATA_WORLD_RIBBON; i++)
             SetMonData(&gPlayerParty[gPlayerPartyCount], i, &data);
 
         SetMonData(&gPlayerParty[gPlayerPartyCount], MON_DATA_STATUS, &data);
@@ -778,11 +781,13 @@ static void Task_EvolutionScene(u8 taskId)
     case EVOSTATE_SET_MON_EVOLVED:
         if (IsCryFinished())
         {
+            u32 zero = 0;
             StringExpandPlaceholders(gStringVar4, gText_CongratsPkmnEvolved);
             BattlePutTextOnWindow(gStringVar4, B_WIN_MSG);
             PlayBGM(MUS_EVOLVED);
             gTasks[taskId].tState++;
             SetMonData(mon, MON_DATA_SPECIES, (void *)(&gTasks[taskId].tPostEvoSpecies));
+            SetMonData(mon, MON_DATA_EVOLUTION_TRACKER, &zero);
             CalculateMonStats(mon);
             EvolutionRenameMon(mon, gTasks[taskId].tPreEvoSpecies, gTasks[taskId].tPostEvoSpecies);
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(GET_BASE_SPECIES_ID(gTasks[taskId].tPostEvoSpecies)), FLAG_SET_SEEN);
@@ -1197,11 +1202,13 @@ static void Task_TradeEvolutionScene(u8 taskId)
     case T_EVOSTATE_SET_MON_EVOLVED:
         if (IsCryFinished())
         {
+            u32 zero = 0;
             StringExpandPlaceholders(gStringVar4, gText_CongratsPkmnEvolved);
             DrawTextOnTradeWindow(0, gStringVar4, 1);
             PlayFanfare(MUS_EVOLVED);
             gTasks[taskId].tState++;
             SetMonData(mon, MON_DATA_SPECIES, (&gTasks[taskId].tPostEvoSpecies));
+            SetMonData(mon, MON_DATA_EVOLUTION_TRACKER, &zero);
             CalculateMonStats(mon);
             EvolutionRenameMon(mon, gTasks[taskId].tPreEvoSpecies, gTasks[taskId].tPostEvoSpecies);
             GetSetPokedexFlag(SpeciesToNationalPokedexNum(GET_BASE_SPECIES_ID(gTasks[taskId].tPostEvoSpecies)), FLAG_SET_SEEN);

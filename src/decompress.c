@@ -3,7 +3,7 @@
 #include "data.h"
 #include "decompress.h"
 #include "pokemon.h"
-#include "pokemon_debug.h"
+#include "pokemon_sprite_visualizer.h"
 #include "text.h"
 
 EWRAM_DATA ALIGNED(4) u8 gDecompressionBuffer[0x4000] = {0};
@@ -18,6 +18,28 @@ void LZDecompressVram(const u32 *src, void *dest)
     LZ77UnCompVram(src, dest);
 }
 
+// Checks if `ptr` is likely LZ77 data
+// Checks word-alignment, min/max size, and header byte
+// Returns uncompressed size if true, 0 otherwise
+u32 IsLZ77Data(const void *ptr, u32 minSize, u32 maxSize)
+{
+    const u8 *data = ptr;
+    u32 size;
+    // Compressed data must be word aligned
+    if (((u32)ptr) & 3)
+        return 0;
+    // Check LZ77 header byte
+    // See https://problemkaputt.de/gbatek.htm#biosdecompressionfunctions
+    if (data[0] != 0x10)
+        return 0;
+
+    // Read 24-bit uncompressed size
+    size = data[1] | (data[2] << 8) | (data[3] << 16);
+    if (size >= minSize && size <= maxSize)
+        return size;
+    return 0;
+}
+
 u16 LoadCompressedSpriteSheet(const struct CompressedSpriteSheet *src)
 {
     struct SpriteSheet dest;
@@ -27,6 +49,26 @@ u16 LoadCompressedSpriteSheet(const struct CompressedSpriteSheet *src)
     dest.size = src->size;
     dest.tag = src->tag;
     return LoadSpriteSheet(&dest);
+}
+
+// This can be used for either compressed or uncompressed sprite sheets
+u16 LoadCompressedSpriteSheetByTemplate(const struct SpriteTemplate *template, s32 offset)
+{
+    struct SpriteTemplate myTemplate;
+    struct SpriteFrameImage myImage;
+    u32 size;
+
+    // Check for LZ77 header and read uncompressed size, or fallback if not compressed (zero size)
+    if ((size = IsLZ77Data(template->images->data, TILE_SIZE_4BPP, sizeof(gDecompressionBuffer))) == 0)
+        return LoadSpriteSheetByTemplate(template, 0, offset);
+
+    LZ77UnCompWram(template->images->data, gDecompressionBuffer);
+    myImage.data = gDecompressionBuffer;
+    myImage.size = size + offset;
+    myTemplate.images = &myImage;
+    myTemplate.tileTag = template->tileTag;
+
+    return LoadSpriteSheetByTemplate(&myTemplate, 0, offset);
 }
 
 void LoadCompressedSpriteSheetOverrideBuffer(const struct CompressedSpriteSheet *src, void *buffer)
@@ -50,16 +92,6 @@ void LoadCompressedSpritePalette(const struct CompressedSpritePalette *src)
     LoadSpritePalette(&dest);
 }
 
-void LoadCompressedSpritePaletteDayNight(const struct CompressedSpritePalette *src)
-{
-    struct SpritePalette dest;
-
-    LZ77UnCompWram(src->data, gDecompressionBuffer);
-    dest.data = (void*) gDecompressionBuffer;
-    dest.tag = src->tag;
-    LoadSpritePaletteDayNight(&dest);
-}
-
 void LoadCompressedSpritePaletteWithTag(const u32 *pal, u16 tag)
 {
     struct SpritePalette dest;
@@ -68,6 +100,16 @@ void LoadCompressedSpritePaletteWithTag(const u32 *pal, u16 tag)
     dest.data = (void *) gDecompressionBuffer;
     dest.tag = tag;
     LoadSpritePalette(&dest);
+}
+
+void LoadCompressedSpritePaletteDayNight(const struct CompressedSpritePalette *src)
+{
+    struct SpritePalette dest;
+
+    LZ77UnCompWram(src->data, gDecompressionBuffer);
+    dest.data = (void*) gDecompressionBuffer;
+    dest.tag = src->tag;
+    LoadSpritePaletteDayNight(&dest);
 }
 
 void LoadCompressedSpritePaletteOverrideBuffer(const struct CompressedSpritePalette *src, void *buffer)
@@ -234,7 +276,8 @@ static void UNUSED StitchObjectsOn8x8Canvas(s32 object_size, s32 object_count, u
             // While the remaining space will be filled with actual data
             if (object_size == 6)
             {
-                for (k = 0; k < 256; k++) {
+                for (k = 0; k < 256; k++)
+                {
                     *dest = 0;
                     dest++;
                 }
@@ -244,14 +287,16 @@ static void UNUSED StitchObjectsOn8x8Canvas(s32 object_size, s32 object_count, u
             {
                 if (object_size == 6)
                 {
-                    for (k = 0; k < 32; k++) {
+                    for (k = 0; k < 32; k++)
+                    {
                         *dest = 0;
                         dest++;
                     }
                 }
 
                 // Copy tile data
-                for (k = 0; k < 32 * object_size; k++) {
+                for (k = 0; k < 32 * object_size; k++)
+                {
                     *dest = *src;
                     src++;
                     dest++;
@@ -259,7 +304,8 @@ static void UNUSED StitchObjectsOn8x8Canvas(s32 object_size, s32 object_count, u
 
                 if (object_size == 6)
                 {
-                    for (k = 0; k < 32; k++) {
+                    for (k = 0; k < 32; k++)
+                    {
                         *dest = 0;
                         dest++;
                     }
@@ -268,7 +314,8 @@ static void UNUSED StitchObjectsOn8x8Canvas(s32 object_size, s32 object_count, u
 
             if (object_size == 6)
             {
-                for (k = 0; k < 256; k++) {
+                for (k = 0; k < 256; k++)
+                {
                     *dest = 0;
                     dest++;
                 }

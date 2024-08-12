@@ -178,12 +178,6 @@ static void Task_RunTimeBasedEvents(u8 taskId)
         RunTimeBasedEvents(data);
         UpdateAmbientCry(&tAmbientCryState, (u16*) &tAmbientCryDelay);
     }
-
-    if (tForceTimeUpdate)
-    {
-        tForceTimeUpdate = 0;
-        DoTimeBasedEvents();
-    }
 }
 
 void ForceTimeBasedEvents(void)

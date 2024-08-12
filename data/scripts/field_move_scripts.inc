@@ -13,13 +13,12 @@ CanLearnCut::
 	msgbox Text_MonUsedFieldMove, MSGBOX_DEFAULT
 	closemessage
 EventScript_CutTreeCommon:
-	callfunc ScrFunc_IsFollowerFieldMoveUser
-	.2byte VAR_0x8004
+	isfollowerfieldmoveuser VAR_0x8004
 	setfieldeffectargument 3, VAR_0x8004 @ skip pose if so
 	dofieldeffect FLDEFF_USE_CUT_ON_TREE
 	waitstate
 EventScript_CutTreeDown:: @ fallthrough
-  	setflag FLAG_SAFE_FOLLOWER_MOVEMENT
+	setflag FLAG_SAFE_FOLLOWER_MOVEMENT
 	call_if_eq VAR_0x8004, TRUE, EventScript_FollowerFieldMove
 	applymovement VAR_LAST_TALKED, Movement_CutTreeDown
 	waitmovement 0
@@ -82,8 +81,7 @@ CanLearnRockSmash::
 	closemessage
 EventScript_RockSmashCommon:
 	@ check if follower should use the field move
-	callfunc ScrFunc_IsFollowerFieldMoveUser
-	.2byte VAR_0x8004
+	isfollowerfieldmoveuser VAR_0x8004
 	setfieldeffectargument 3, VAR_0x8004 @ skip pose if so
 	dofieldeffect FLDEFF_USE_ROCK_SMASH
 	waitstate
@@ -102,10 +100,7 @@ EventScript_SmashRock:: @ fallthrough
 	end
 
 EventScript_FollowerFieldMove:
-	callfunc ScrFunc_GetDirectionToFace
-	.2byte VAR_0x8005
-	.byte OBJ_EVENT_ID_FOLLOWER
-	.byte OBJ_EVENT_ID_PLAYER
+	getdirectiontoface VAR_0x8005, OBJ_EVENT_ID_FOLLOWER, OBJ_EVENT_ID_PLAYER
 	specialvar VAR_0x8006, GetPlayerFacingDirection
 	goto_if_eq VAR_0x8005, DIR_NONE, EventScript_FollowerFieldMoveEnd
 	@ Swap follower and player

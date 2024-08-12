@@ -133,7 +133,7 @@ BattleFrontier_BattlePikeThreePathRoom_EventScript_NoTurningBack::
 	lockall
 	msgbox BattleFrontier_BattlePike_Text_PathBlockedNoTurningBack, MSGBOX_DEFAULT
 	closemessage
-  releaseall
+	releaseall
 	end
 
 BattleFrontier_BattlePikeRoomNormal_EventScript_SetEnteredRoom::
@@ -147,11 +147,8 @@ BattleFrontier_BattlePikeRoomNormal_EventScript_NoTurningBack::
 	lockall
 	msgbox BattleFrontier_BattlePike_Text_PathBlockedNoTurningBack, MSGBOX_DEFAULT
 	closemessage
-  releaseall
-	end
-
+	releaseall
 BattleFrontier_BattlePikeRoomNormal_EventScript_Exit::
-	pike_ispartyfullhealth
 	call_if_eq VAR_RESULT, TRUE, BattleFrontier_BattlePikeRoom_EventScript_DisableHealing
 	call_if_ne VAR_RESULT, TRUE, BattleFrontier_BattlePikeRoom_EventScript_EnableHealing
 	pike_get PIKE_DATA_WIN_STREAK
@@ -216,7 +213,7 @@ BattleFrontier_BattlePikeRoomWildMons_EventScript_NoTurningBack::
 	lockall
 	msgbox BattleFrontier_BattlePike_Text_PathBlockedNoTurningBack, MSGBOX_DEFAULT
 	closemessage
-  releaseall
+	releaseall
 	end
 
 BattleFrontier_BattlePike_EventScript_Retire::

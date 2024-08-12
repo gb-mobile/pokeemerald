@@ -5,6 +5,7 @@
 // Only 12 bytes of the footer are used.
 #define SECTOR_DATA_SIZE 4084
 #define SECTOR_FOOTER_SIZE 12
+#define SAVE_BLOCK_3_CHUNK_SIZE 0
 #define SECTOR_SIZE (SECTOR_DATA_SIZE + SECTOR_FOOTER_SIZE)
 
 #define NUM_SAVE_SLOTS 2

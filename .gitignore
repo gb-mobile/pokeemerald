@@ -43,9 +43,6 @@ prefabs.json
 *.ss9
 *.a
 .fuse_hidden*
-.ccls-cache/*
-.ropeproject/
-overworld/
 *.sna
 *.diff
 *.sym
@@ -53,3 +50,4 @@ overworld/
 /.vs
 tools/poryscript
 src/data/map_group_count.h
+tools/trainerproc/trainerproc

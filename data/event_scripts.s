@@ -1,4 +1,4 @@
-#include "config.h"
+#include "config/general.h"
 #include "config/battle.h"
 #include "config/item.h"
 #include "constants/global.h"
@@ -598,6 +598,7 @@ gStdScripts_End::
 	.include "data/scripts/new_game.inc"
 	.include "data/scripts/hall_of_fame.inc"
 
+	.include "data/scripts/config.inc"
 	.include "data/scripts/debug.inc"
 
 EventScript_WhiteOut::
@@ -743,7 +744,7 @@ Common_EventScript_OutOfCenterPartyHeal::
 	playfanfare MUS_HEAL
 	waitfanfare
 	special HealPlayerParty
-  callnative UpdateFollowingPokemon
+	callnative UpdateFollowingPokemon
 	fadescreen FADE_FROM_BLACK
 	return
 
@@ -967,6 +968,10 @@ gText_PlayerFoundOneTMHM::
 	.string "{PLAYER} found one {STR_VAR_1}\n"
 	.string "{STR_VAR_2}!$"
 
+gText_PlayerFoundTMHMs::
+	.string "{PLAYER} found {STR_VAR_3} {STR_VAR_1}\n"
+	.string "{STR_VAR_2}!$"
+
 gText_Sudowoodo_Attacked::
 	.string "The weird tree doesn't like the\n"
 	.string "Wailmer Pail!\p"
@@ -1024,15 +1029,6 @@ Common_EventScript_LegendaryFlewAway::
 	msgbox gText_LegendaryFlewAway, MSGBOX_DEFAULT
 	release
 	end
-
-EventScript_CheckSavefileSize::
-	special CheckSavefileSize
-	msgbox EventScript_Text_CheckSavefileSize
-	release
-	end
-
-EventScript_Text_CheckSavefileSize:
-	.string "SaveBlock1 size: {STR_VAR_1}/16336 bytes.\nSaveBlock2 size: {STR_VAR_2}/4084 bytes.\p{PKMN}Storage size: {STR_VAR_3}/36756 bytes.$"
 
 EventScript_VsSeekerChargingDone::
 	special VsSeekerFreezeObjectsAfterChargeComplete
@@ -1093,7 +1089,7 @@ EventScript_VsSeekerChargingDone::
 	.include "data/scripts/move_tutors.inc"
 	.include "data/scripts/trainer_hill.inc"
 	.include "data/scripts/test_signpost.inc"
-  .include "data/scripts/follower.inc"
+	.include "data/scripts/follower.inc"
 	.include "data/text/frontier_brain.inc"
 	.include "data/text/save.inc"
 	.include "data/text/birch_speech.inc"
