@@ -138,6 +138,8 @@
 	setvar VAR_0x8006, \partnerId
 	special DoSpecialTrainerBattle
 	waitstate
+	setvar VAR_0x8004, FRONTIER_UTIL_FUNC_SAVE_PARTY
+	special CallFrontierUtilFunc
 	special LoadPlayerParty
 	.endm
 

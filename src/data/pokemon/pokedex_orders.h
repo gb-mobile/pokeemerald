@@ -4297,7 +4297,7 @@ const u16 gPokedexOrder_Height[] =
     // 35'05" / 10.8m
     //NATIONAL_DEX_RAYQUAZA_MEGA,
     // 35'09" / 10.9m
-    //NATIONAL_DEX_EXEGGUTOR_ALOLAN,
+    NATIONAL_DEX_EXEGGUTOR_ALOLAN,
     // 12m
     NATIONAL_DEX_DONDOZO,
     // 47'07" / 14.5m

@@ -22,12 +22,12 @@ SouthernIsland_Interior_OnTransition:
 	end
 
 SouthernIsland_Interior_EventScript_SetUpLatios::
-	setvar VAR_OBJ_GFX_ID_1, OBJ_EVENT_GFX_LATIOS
+	setvar VAR_OBJ_GFX_ID_1, OBJ_EVENT_GFX_SPECIES(LATIOS)
 	setvar VAR_TEMP_4, SPECIES_LATIOS
 	return
 
 SouthernIsland_Interior_EventScript_SetUpLatias::
-	setvar VAR_OBJ_GFX_ID_1, OBJ_EVENT_GFX_LATIAS
+	setvar VAR_OBJ_GFX_ID_1, OBJ_EVENT_GFX_SPECIES(LATIAS)
 	setvar VAR_TEMP_4, SPECIES_LATIAS
 	return
 
@@ -198,7 +198,7 @@ SouthernIsland_Interior_TriggerScript_EnterMain::
 	applymovement 3, SouthernIsland_Interior_Movement_PlayerTurnsDown
 	msgbox SouthernIsland_Interior_Text_Steven3, MSGBOX_DEFAULT
 	closemessage
-	multi_fixed_2_vs_2 TRAINER_COURTNEY, Enemy2DefeatText, TRAINER_GRUNT_SOUTHERNISLAND, Enemy1DefeatText, TRAINER_STEVEN_SOUTHERNISLAND
+	multi_fixed_2_vs_2 TRAINER_COURTNEY, Enemy2DefeatText, TRAINER_GRUNT_SOUTHERNISLAND, Enemy1DefeatText, PARTNER_STEVEN_SOUTHERNISLAND
 	specialvar VAR_RESULT, GetBattleOutcome
     compare VAR_RESULT, B_OUTCOME_LOST
     goto_if_eq Script_PlayerLostTheFight

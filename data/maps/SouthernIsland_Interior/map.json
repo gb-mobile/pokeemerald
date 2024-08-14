@@ -15,7 +15,7 @@
   "connections": null,
   "object_events": [
     {
-      "graphics_id": "OBJ_EVENT_GFX_LATIOS",
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(LATIOS)",
       "x": 15,
       "y": 5,
       "elevation": 3,
@@ -28,7 +28,7 @@
       "flag": "FLAG_HIDE_SOUTHERN_ISLAND_EON_STONE"
     },
     {
-      "graphics_id": "OBJ_EVENT_GFX_LATIAS",
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(LATIAS)",
       "x": 12,
       "y": 5,
       "elevation": 0,

@@ -27,7 +27,7 @@
     [PARTNER_STEVEN] =
     {
 #line 9
-        .trainerName = _("STEVEN"),
+        .trainerName = _("Steven"),
 #line 10
         .trainerClass = TRAINER_CLASS_RIVAL,
 #line 11
@@ -100,6 +100,34 @@
                 MOVE_SOLAR_BEAM,
                 MOVE_DRAGON_CLAW,
             },
+            },
+        },
+    },
+#line 45
+    [PARTNER_STEVEN_SOUTHERNISLAND] =
+    {
+#line 46
+        .trainerName = _("Steven"),
+#line 47
+        .trainerClass = TRAINER_CLASS_PKMN_TRAINER_1,
+#line 48
+        .trainerPic = TRAINER_BACK_PIC_STEVEN,
+        .encounterMusic_gender = 
+#line 50
+            TRAINER_ENCOUNTER_MUSIC_MALE,
+        .partySize = 1,
+        .party = (const struct TrainerMon[])
+        {
+            {
+#line 52
+            .species = SPECIES_METANG,
+            .gender = TRAINER_MON_RANDOM_GENDER,
+#line 54
+            .iv = TRAINER_PARTY_IVS(0, 0, 0, 0, 0, 0),
+#line 53
+            .lvl = 35,
+            .nature = NATURE_HARDY,
+            .dynamaxLevel = MAX_DYNAMAX_LEVEL,
             },
         },
     },

@@ -317,7 +317,7 @@
       "flag": "FLAG_HIDE_ROUTE_118_STEVEN2"
     },
     {
-      "graphics_id": "OBJ_EVENT_GFX_LATIAS",
+      "graphics_id": "OBJ_EVENT_GFX_SPECIES(LATIAS)",
       "x": 44,
       "y": 18,
       "elevation": 3,

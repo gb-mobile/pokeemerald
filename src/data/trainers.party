@@ -16885,18 +16885,6 @@ Camerupt
 Level: 31
 IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
 
-=== TRAINER_STEVEN_SOUTHERNISLAND ===
-Name: Steven
-Class: Pkmn Trainer 1
-Pic: Steven
-Gender: Male
-Music: Male
-Double Battle: No
-
-Metang
-Level: 35
-IVs: 0 HP / 0 Atk / 0 Def / 0 SpA / 0 SpD / 0 Spe
-
 === TRAINER_SIDNEY_2 ===
 Name: Sidney
 Class: Elite Four

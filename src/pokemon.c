@@ -2539,15 +2539,6 @@ u32 GetBoxMonData3(struct BoxPokemon *boxMon, s32 field, u8 *data)
         case MON_DATA_SPECIES:
             retVal = boxMon->isBadEgg ? SPECIES_EGG : substruct0->species;
             break;
-        case MON_DATA_YEAR_MET:
-            retVal = boxMon->yearMet;
-            break;
-        case MON_DATA_DAY_MET:
-            retVal = boxMon->dayMet;
-            break;
-        case MON_DATA_MONTH_MET:
-            retVal = boxMon->monthMet;
-            break;
         case MON_DATA_HELD_ITEM:
             retVal = substruct0->heldItem;
             break;
@@ -3136,15 +3127,6 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
         case MON_DATA_MET_GAME:
             SET8(substruct3->metGame);
             break;
-        case MON_DATA_YEAR_MET:
-            SET16(boxMon->yearMet);
-            break;
-        case MON_DATA_MONTH_MET:
-            SET16(boxMon->monthMet);
-            break;
-        case MON_DATA_DAY_MET:
-            SET16(boxMon->dayMet);
-            break;
         case MON_DATA_POKEBALL:
         {
             u8 pokeball = *data;
@@ -3336,6 +3318,15 @@ void SetBoxMonData(struct BoxPokemon *boxMon, s32 field, const void *dataArg)
             break;
         case MON_DATA_CHECKSUM:
             SET16(boxMon->checksum);
+            break;
+        case MON_DATA_YEAR_MET:
+            SET16(boxMon->yearMet);
+            break;
+        case MON_DATA_MONTH_MET:
+            SET16(boxMon->monthMet);
+            break;
+        case MON_DATA_DAY_MET:
+            SET16(boxMon->dayMet);
             break;
         case MON_DATA_IS_SHINY:
         {
