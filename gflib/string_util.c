@@ -27,6 +27,27 @@ static const s32 sPowersOfTen[] =
     1000000000,
 };
 
+static const u64 sPowersOfTen64[] =
+{
+               1,
+              10,
+             100,
+            1000,
+           10000,
+          100000,
+         1000000,
+        10000000,
+       100000000,
+      1000000000,
+     10000000000,
+    100000000000,
+   1000000000000,
+  10000000000000,
+ 100000000000000,
+1000000000000000,
+};
+
+
 u8 *StringCopy_Nickname(u8 *dest, const u8 *src)
 {
     u8 i;
@@ -218,11 +239,11 @@ u8 *ConvertIntToDecimalStringN(u8 *dest, s32 value, enum StringConvertMode mode,
     return dest;
 }
 
-u8 *ConvertUIntToDecimalStringN(u8 *dest, u32 value, enum StringConvertMode mode, u8 n)
+u8 *ConvertUIntToDecimalStringN(u8 *dest, u64 value, enum StringConvertMode mode, u8 n)
 {
     enum { WAITING_FOR_NONZERO_DIGIT, WRITING_DIGITS, WRITING_SPACES } state;
-    s32 powerOfTen;
-    s32 largestPowerOfTen = sPowersOfTen[n - 1];
+    s64 powerOfTen;
+    s64 largestPowerOfTen = sPowersOfTen64[n - 1];
 
     state = WAITING_FOR_NONZERO_DIGIT;
 
@@ -243,7 +264,7 @@ u8 *ConvertUIntToDecimalStringN(u8 *dest, u32 value, enum StringConvertMode mode
             u8 *out = dest++;
 
             if (digit <= 9)
-                c = sDigits[digit];
+                c = sDigits2[digit];
             else
                 c = CHAR_QUESTION_MARK;
 
@@ -256,7 +277,7 @@ u8 *ConvertUIntToDecimalStringN(u8 *dest, u32 value, enum StringConvertMode mode
             out = dest++;
 
             if (digit <= 9)
-                c = sDigits[digit];
+                c = sDigits2[digit];
             else
                 c = CHAR_QUESTION_MARK;
 

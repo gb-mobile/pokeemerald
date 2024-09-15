@@ -3422,6 +3422,7 @@ extern const u8 gText_UploadSecretBase[];
 extern const u8 gText_UploadRecordedBattle[];
 extern const u8 gText_InternetOptions[];
 extern const u8 gText_CreateFriendCode[];
+extern const u8 gText_FC[];
 
 extern const u8 gText_Fertilize[];
 extern const u8 gText_PlantBerry[];
