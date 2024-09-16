@@ -257,7 +257,7 @@ u8 *ConvertUIntToDecimalStringN(u8 *dest, u64 value, enum StringConvertMode mode
     {
         u8 c;
         u16 digit = value / powerOfTen;
-        u32 temp = value - (powerOfTen * digit);
+        u64 temp = value - (powerOfTen * digit);
 
         if (state == WRITING_DIGITS)
         {
