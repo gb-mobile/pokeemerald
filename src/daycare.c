@@ -270,16 +270,53 @@ static void StorePokemonInDaycare(struct Pokemon *mon, struct DaycareMon *daycar
         TransferEggMoves();
 }
 
+static void StorePokemonInDaycare2(struct BoxPokemon *mon, struct DaycareMon *daycareMon)
+{
+    if (BoxMonHasMail(mon))
+    {
+        u8 mailId;
+
+        StringCopy(daycareMon->mail.otName, gSaveBlock2Ptr->playerName);
+        GetBoxMonNickname(mon, daycareMon->mail.monName);
+        StripExtCtrlCodes(daycareMon->mail.monName);
+        daycareMon->mail.gameLanguage = GAME_LANGUAGE;
+        daycareMon->mail.monLanguage = GetBoxMonData(mon, MON_DATA_LANGUAGE);
+        mailId = GetBoxMonData(mon, MON_DATA_MAIL);
+        daycareMon->mail.message = gSaveBlock1Ptr->mail[mailId];
+        TakeMailFromBoxMon(mon);
+    }
+
+    daycareMon->mon = *mon;
+    daycareMon->steps = 0;
+    ZeroBoxMonData(mon);
+
+    if (P_EGG_MOVE_TRANSFER >= GEN_8)
+        TransferEggMoves();
+}
+
 static void StorePokemonInEmptyDaycareSlot(struct Pokemon *mon, struct DayCare *daycare)
 {
     s8 slotId = Daycare_FindEmptySpot(daycare);
     StorePokemonInDaycare(mon, &daycare->mons[slotId]);
 }
 
+static void StorePokemonInEmptyDaycareSlot2(struct BoxPokemon *mon, struct DayCare *daycare)
+{
+    s8 slotId = Daycare_FindEmptySpot(daycare);
+    StorePokemonInDaycare2(mon, &daycare->mons[slotId]);
+}
+
 void StoreSelectedPokemonInDaycare(void)
 {
-    u8 monId = GetCursorSelectionMonId();
-    StorePokemonInEmptyDaycareSlot(&gPlayerParty[monId], &gSaveBlock1Ptr->daycare);
+    u8 monId = GetSavedCursorPos();
+    if(GetInPartyMenu()){
+        StorePokemonInEmptyDaycareSlot(&gPlayerParty[monId], &gSaveBlock1Ptr->daycare);
+    }
+    else{
+        u8 boxId = StorageGetCurrentBox();
+        StorePokemonInEmptyDaycareSlot2(&gPokemonStoragePtr->boxes[boxId][monId], &gSaveBlock1Ptr->daycare);
+    }
+
 }
 
 // Shifts the second daycare Pokémon slot into the first slot.
@@ -1248,8 +1285,12 @@ static void _GetDaycareMonNicknames(struct DayCare *daycare)
 
 u16 GetSelectedMonNicknameAndSpecies(void)
 {
-    GetBoxMonNickname(&gPlayerParty[GetCursorSelectionMonId()].box, gStringVar1);
-    return GetBoxMonData(&gPlayerParty[GetCursorSelectionMonId()].box, MON_DATA_SPECIES);
+    if(GetInPartyMenu()!=0){
+        GetBoxMonNickname(&gPlayerParty[GetSavedCursorPos()].box, gStringVar1);
+        return GetBoxMonData(&gPlayerParty[GetSavedCursorPos()].box, MON_DATA_SPECIES);
+    }
+    GetBoxMonNickname(&gPokemonStoragePtr->boxes[StorageGetCurrentBox()][GetSavedCursorPos()], gStringVar1);
+    return GetBoxMonData(&gPokemonStoragePtr->boxes[StorageGetCurrentBox()][GetSavedCursorPos()], MON_DATA_SPECIES);
 }
 
 void GetDaycareMonNicknames(void)
@@ -1605,4 +1646,3 @@ static u8 ModifyBreedingScoreForOvalCharm(u8 score)
 
     return score;
 }
-

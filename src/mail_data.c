@@ -42,6 +42,15 @@ bool8 MonHasMail(struct Pokemon *mon)
         return FALSE;
 }
 
+bool8 BoxMonHasMail(struct BoxPokemon *mon)
+{
+    u16 heldItem = GetBoxMonData(mon, MON_DATA_HELD_ITEM);
+    if (ItemIsMail(heldItem) && GetBoxMonData(mon, MON_DATA_MAIL) != MAIL_NONE)
+        return TRUE;
+    else
+        return FALSE;
+}
+
 u8 GiveMailToMonByItemId(struct Pokemon *mon, u16 itemId)
 {
     u8 heldItem[2];
@@ -148,6 +157,23 @@ void TakeMailFromMon(struct Pokemon *mon)
         heldItem[1] = ITEM_NONE << 8;
         SetMonData(mon, MON_DATA_MAIL, &mailId);
         SetMonData(mon, MON_DATA_HELD_ITEM, heldItem);
+    }
+}
+
+void TakeMailFromBoxMon(struct BoxPokemon *mon)
+{
+    u8 heldItem[2];
+    u8 mailId;
+
+    if (BoxMonHasMail(mon))
+    {
+        mailId = GetBoxMonData(mon, MON_DATA_MAIL);
+        gSaveBlock1Ptr->mail[mailId].itemId = ITEM_NONE;
+        mailId = MAIL_NONE;
+        heldItem[0] = ITEM_NONE;
+        heldItem[1] = ITEM_NONE << 8;
+        SetBoxMonData(mon, MON_DATA_MAIL, &mailId);
+        SetBoxMonData(mon, MON_DATA_HELD_ITEM, heldItem);
     }
 }
 
