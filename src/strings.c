@@ -941,6 +941,7 @@ const u8 gPCText_Store[] = _("Store");
 const u8 gPCText_Withdraw[] = _("Withdraw");
 const u8 gPCText_Shift[] = _("Shift");
 const u8 gPCText_Move[] = _("Move");
+const u8 gPCText_Select[] = _("Select");
 const u8 gPCText_Place[] = _("Place");
 const u8 gPCText_Summary[] = _("Summary");
 const u8 gPCText_Release[] = _("Release");

@@ -2363,6 +2363,7 @@ extern const u8 gPCText_Cancel[];
 extern const u8 gPCText_Store[];
 extern const u8 gPCText_Withdraw[];
 extern const u8 gPCText_Move[];
+extern const u8 gPCText_Select[];
 extern const u8 gPCText_Shift[];
 extern const u8 gPCText_Place[];
 extern const u8 gPCText_Summary[];

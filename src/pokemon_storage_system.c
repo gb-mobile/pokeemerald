@@ -69,7 +69,8 @@ enum {
 #endif
     OPTION_MOVE_ITEMS,
     OPTION_EXIT,
-    OPTIONS_COUNT
+    OPTIONS_COUNT,
+    OPTION_SELECT_MON
 };
 
 // IDs for messages to print with PrintMessage
@@ -125,6 +126,7 @@ enum {
     MENU_STORE,
     MENU_WITHDRAW,
     MENU_MOVE,
+    MENU_SELECT,
     MENU_SHIFT,
     MENU_PLACE,
     MENU_SUMMARY,
@@ -181,6 +183,7 @@ enum {
     INPUT_DEPOSIT,
     INPUT_WITHDRAW,
     INPUT_MOVE_MON,
+    INPUT_SELECT_MON,
     INPUT_SHIFT_MON,
     INPUT_PLACE_MON,
     INPUT_TAKE_ITEM,
@@ -785,7 +788,6 @@ static void SetCursorInParty(void);
 static void SetCursorBoxPosition(u8);
 static void ClearSavedCursorPos(void);
 static void SaveCursorPos(void);
-static u8 GetSavedCursorPos(void);
 static void InitMonPlaceChange(u8);
 static bool8 DoMonPlaceChange(void);
 static bool8 MonPlaceChange_Shift(void);
@@ -2026,7 +2028,10 @@ void EnterPokeStorage(u8 boxOption)
     sStorage = Alloc(sizeof(*sStorage));
     if (sStorage == NULL)
     {
-        SetMainCallback2(CB2_ExitPokeStorage);
+        if(boxOption == OPTION_SELECT_MON)
+            SetMainCallback2(CB2_ReturnToFieldContinueScript);
+        else
+            SetMainCallback2(CB2_ExitPokeStorage);
     }
     else
     {
@@ -2034,6 +2039,7 @@ void EnterPokeStorage(u8 boxOption)
         sStorage->isReopening = FALSE;
         sMovingItemId = ITEM_NONE;
         sStorage->state = 0;
+        sStorage->infostate = 0;
         sStorage->taskId = CreateTask(Task_InitPokeStorage, 3);
         sLastUsedBox = StorageGetCurrentBox();
         SetMainCallback2(CB2_PokeStorage);
@@ -2046,7 +2052,10 @@ static void CB2_ReturnToPokeStorage(void)
     sStorage = Alloc(sizeof(*sStorage));
     if (sStorage == NULL)
     {
-        SetMainCallback2(CB2_ExitPokeStorage);
+        if(sStorage->boxOption == OPTION_SELECT_MON)
+            SetMainCallback2(CB2_ReturnToFieldContinueScript);
+        else
+            SetMainCallback2(CB2_ExitPokeStorage);
     }
     else
     {
@@ -2303,7 +2312,7 @@ static void Task_PokeStorageMain(u8 taskId)
             sStorage->state = MSTATE_MOVE_CURSOR;
             break;
         case INPUT_SHOW_PARTY:
-            if (sStorage->boxOption != OPTION_MOVE_MONS && sStorage->boxOption != OPTION_MOVE_ITEMS)
+            if (sStorage->boxOption != OPTION_MOVE_MONS && sStorage->boxOption != OPTION_MOVE_ITEMS && sStorage->boxOption != OPTION_SELECT_MON)
             {
                 PrintMessage(MSG_WHICH_ONE_WILL_TAKE);
                 sStorage->state = MSTATE_WAIT_MSG;
@@ -2322,7 +2331,7 @@ static void Task_PokeStorageMain(u8 taskId)
                 else
                     SetPokeStorageTask(Task_HidePartyPokemon);
             }
-            else if (sStorage->boxOption == OPTION_MOVE_ITEMS)
+            else if (sStorage->boxOption == OPTION_MOVE_ITEMS || sStorage->boxOption == OPTION_SELECT_MON)
             {
                 SetPokeStorageTask(Task_HidePartyPokemon);
             }
@@ -2730,6 +2739,17 @@ static void Task_OnSelectedMon(u8 taskId)
             break;
         case MENU_INFO:
             SetPokeStorageTask(Task_ShowItemInfo);
+            break;
+        case MENU_SELECT:
+            PlaySE(SE_SELECT);
+            if(sInPartyMenu)
+                VarSet(VAR_RESULT,GetBoxMonData(&gPlayerParty[sCursorPosition].box, MON_DATA_SPECIES));
+            else
+                VarSet(VAR_RESULT,GetBoxMonDataAt(sStorage->newCurrBoxId, sCursorPosition, MON_DATA_SPECIES_OR_EGG));
+            VarSet(gSpecialVar_0x8004,sCursorPosition);
+            SaveCursorPos();
+            sStorage->screenChangeType = SCREEN_CHANGE_EXIT_BOX;
+            SetPokeStorageTask(Task_ChangeScreen);
             break;
         }
         break;
@@ -3781,8 +3801,13 @@ static void Task_ChangeScreen(u8 taskId)
     {
     case SCREEN_CHANGE_EXIT_BOX:
     default:
+        if(sStorage->boxOption == OPTION_SELECT_MON){
+            SetMainCallback2(CB2_ReturnToFieldContinueScript);
+            VarSet(gSpecialVar_0x8004,0xFF);
+        }
+        else
+            SetMainCallback2(CB2_ExitPokeStorage);
         FreePokeStorageData();
-        SetMainCallback2(CB2_ExitPokeStorage);
         break;
     case SCREEN_CHANGE_SUMMARY_SCREEN:
         boxMons = sStorage->summaryMon.box;
@@ -6219,7 +6244,7 @@ static void SaveCursorPos(void)
     sSavedCursorPosition = sCursorPosition;
 }
 
-static u8 GetSavedCursorPos(void)
+u8 GetSavedCursorPos(void)
 {
     return sSavedCursorPosition;
 }
@@ -7284,6 +7309,8 @@ static u8 InBoxInput_Normal(void)
                     return INPUT_WITHDRAW;
                 case MENU_MOVE:
                     return INPUT_MOVE_MON;
+                case MENU_SELECT:
+                    return INPUT_SELECT_MON;
                 case MENU_SHIFT:
                     return INPUT_SHIFT_MON;
                 case MENU_PLACE:
@@ -7565,6 +7592,8 @@ static u8 HandleInput_InParty(void)
                     return INPUT_WITHDRAW;
                 case MENU_MOVE:
                     return INPUT_MOVE_MON;
+                case MENU_SELECT:
+                    return INPUT_SELECT_MON;
                 case MENU_SHIFT:
                     return INPUT_SHIFT_MON;
                 case MENU_PLACE:
@@ -7842,6 +7871,13 @@ static bool8 SetMenuTexts_Mon(void)
                 return FALSE;
         }
         break;
+    case OPTION_SELECT_MON:
+        if (species != SPECIES_NONE){
+            SetMenuText(MENU_SELECT);
+        }
+        else
+            return FALSE;
+        break;
     case OPTION_MOVE_ITEMS:
     default:
         return FALSE;
@@ -7857,7 +7893,8 @@ static bool8 SetMenuTexts_Mon(void)
     }
 
     SetMenuText(MENU_MARK);
-    SetMenuText(MENU_RELEASE);
+    if (sStorage->boxOption != OPTION_SELECT_MON)
+        SetMenuText(MENU_RELEASE);
     SetMenuText(MENU_CANCEL);
     return TRUE;
 }
@@ -8126,6 +8163,7 @@ static const u8 *const sMenuTexts[] =
     [MENU_STORE]      = gPCText_Store,
     [MENU_WITHDRAW]   = gPCText_Withdraw,
     [MENU_MOVE]       = gPCText_Move,
+    [MENU_SELECT]     = gPCText_Select,
     [MENU_SHIFT]      = gPCText_Shift,
     [MENU_PLACE]      = gPCText_Place,
     [MENU_SUMMARY]    = gPCText_Summary,
@@ -9733,6 +9771,11 @@ static void SetBoxWallpaper(u8 boxId, u8 wallpaperId)
         gPokemonStoragePtr->boxWallpapers[boxId] = wallpaperId;
 }
 
+u8 GetInPartyMenu(void)
+{
+    return sInPartyMenu;
+}
+
 // For moving to the next Pokémon while viewing the summary screen
 s16 AdvanceStorageMonIndex(struct BoxPokemon *boxMons, u8 currIndex, u8 maxIndex, u8 mode)
 {
@@ -10281,4 +10324,10 @@ void UpdateSpeciesSpritePSS(struct BoxPokemon *boxMon)
         }
     }
     sJustOpenedBag = FALSE;
+}
+
+// Used as a script special for showing a box mon to various npcs (e.g. in-game trades, move deleter)
+void ChooseBoxMon(void)
+{
+    EnterPokeStorage(OPTION_SELECT_MON);
 }
