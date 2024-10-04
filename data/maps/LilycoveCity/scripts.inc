@@ -418,10 +418,10 @@ LilycoveCity_EventScript_CheckSpecies::
 	lock
 	faceplayer
 	goto_if_set FLAG_ITEM_ALTARIANITE, LilycoveCity_ReceivedAltarianite
-	msgbox LilycoveCity_Text_Alatria, MSGBOX_DEFAULT	
-	special ChoosePartyMon
+	msgbox LilycoveCity_Text_Alatria, MSGBOX_DEFAULT
+	fadescreen FADE_TO_BLACK	
+	special ChooseBoxMon
 	waitstate
-	specialvar VAR_RESULT, ScriptGetPartyMonSpecies
 	compare VAR_RESULT, SPECIES_ALTARIA
 	goto_if_eq LilycoveCity_EventScript_YouHaveOne
 	msgbox LilycoveCity_Text_YouDontHaveOne, MSGBOX_SIGN	
