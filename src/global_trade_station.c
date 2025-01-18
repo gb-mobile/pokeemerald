@@ -33,6 +33,7 @@
 #include "overworld.h"
 #include "party_menu.h"
 #include "pokedex.h"
+#include "pokemon_storage_system.h"
 #include "wonder_news.h"
 #include "constants/cable_club.h"
 #include "constants/party_menu.h"
@@ -42,6 +43,8 @@
 #include "trade.h"
 #include "trainer_pokemon_sprites.h"
 #include "trig.h"
+#include "mobile_adapter.h"
+#include "internet_options_menu.h"
 
 #define LIST_MENU_TILE_NUM 10
 #define LIST_MENU_PAL_NUM 224
@@ -78,11 +81,11 @@ struct GlobalTradeStationTaskData
     u16 var; // Multipurpose
     u16 depositPokemon;
     u16 searchPokemon;
-    u16 unused3;
+    u16 errorNum;
     u8 state;
     u8 textState;
-    u8 unused4;
-    u8 unused5;
+    u8 nextState;
+    u8 monDeposited;
     bool8 isWonderNews;
     bool8 sourceIsFriend;
     u8 msgId;
@@ -676,9 +679,6 @@ static void ResetPokedexViewGTS(struct GTSPokedexView *pokedexView)
     pokedexView->dexMode = DEX_MODE_HOENN;
     pokedexView->windowid = DEX_MODE_HOENN;
     pokedexView->dexOrder = 0;
-    pokedexView->dexOrderBackup = 0;
-    pokedexView->seenCount = 0;
-    pokedexView->ownCount = 0;
     //for (i = 0; i < 4; i++)
     //    pokedexView->monSpriteIds[i] = 0xFFFF;
     pokedexView->cursorRelPos = 0;
@@ -693,13 +693,6 @@ static void ResetPokedexViewGTS(struct GTSPokedexView *pokedexView)
     pokedexView->maxScrollTimer = 0;
     pokedexView->scrollSpeed = 0;
     pokedexView->currentPage = 0;
-    pokedexView->currentPageBackup = 0;
-    pokedexView->isSearchResults = FALSE;
-    pokedexView->selectedScreen = 0;
-    pokedexView->screenSwitchState = 0;
-    pokedexView->menuIsOpen = 0;
-    pokedexView->menuCursorPos = 0;
-    pokedexView->menuY = 0;
 }
 
 static void CreatePokedexListGTS()
@@ -1157,13 +1150,12 @@ static void CreateMonSpritesAtPos(u16 selectedMon, u16 ignored)
 
     for (i = 0; i < MAX_MONS_ON_SCREEN; i++)
         sGTSPokedexView->monSpriteIds[i] = 0xFFFF;
-    sGTSPokedexView->selectedMonSpriteId = 0xFFFF;
 
     // Create top mon sprite
     if (selectedMon == 0)
         dexNum = 0xFFFF;
     else
-        dexNum = sGTSPokedexView->pokedexList[selectedMon - 1].dexNum;
+        dexNum = sGTSPokedexView->searchResult[selectedMon-1].dexNum;//pokedexList[selectedMon - 1].dexNum;
     if (dexNum != 0xFFFF)
     {
         spriteId = CreatePokedexMonSprite(dexNum, 0xB4, 0x40);
@@ -1172,7 +1164,7 @@ static void CreateMonSpritesAtPos(u16 selectedMon, u16 ignored)
     }
 
     // Create mid mon sprite
-    dexNum = sGTSPokedexView->pokedexList[selectedMon].dexNum;
+    dexNum = sGTSPokedexView->searchResult[selectedMon].dexNum;
     if (dexNum != 0xFFFF)
     {
         spriteId = CreatePokedexMonSprite(dexNum, 0xB4, 0x40);
@@ -1181,7 +1173,7 @@ static void CreateMonSpritesAtPos(u16 selectedMon, u16 ignored)
     }
 
     // Create bottom mon sprite
-    dexNum = sGTSPokedexView->pokedexList[selectedMon + 1].dexNum;
+    dexNum = sGTSPokedexView->searchResult[selectedMon+1].dexNum;
     if (dexNum != 0xFFFF)
     {
         spriteId = CreatePokedexMonSprite(dexNum, 0xB4, 0x40);
@@ -1207,7 +1199,7 @@ static void CreateScrollingPokemonSprite(u8 direction, u16 selectedMon)
     switch (direction)
     {
     case 1: // up
-        dexNum = sGTSPokedexView->pokedexList[selectedMon - 1].dexNum;
+        dexNum = sGTSPokedexView->searchResult[selectedMon - 1].dexNum;
         if (dexNum != 0xFFFF  && selectedMon != 0)
         {
             spriteId = CreatePokedexMonSprite(dexNum, 0xB4, 0x40);
@@ -1220,7 +1212,7 @@ static void CreateScrollingPokemonSprite(u8 direction, u16 selectedMon)
             sGTSPokedexView->listVOffset = LIST_SCROLL_STEP - 1;
         break;
     case 2: // down
-        dexNum = sGTSPokedexView->pokedexList[selectedMon + 1].dexNum;
+        dexNum = sGTSPokedexView->searchResult[selectedMon + 1].dexNum;
         if (dexNum != 0xFFFF)
         {
             spriteId = CreatePokedexMonSprite(dexNum, 0xB4, 0x40);
@@ -1419,9 +1411,20 @@ void CB2_ReturnToGlobalTradeStation(void)
 {
     if (HandleGlobalTradeStationSetup())
     {
-        gSpecialVar_0x8004 = GetCursorSelectionMonId();
+        //gSpecialVar_0x8004 = GetCursorSelectionMonId();
         SetMainCallback2(CB2_GlobalTradeStation);
         RecreateGlobalTradeStationTask();
+    }
+    RunTasks();
+}
+
+void CB2_ReturnToGlobalTradeStationFromSummary(void)
+{
+    if (HandleGlobalTradeStationSetup())
+    {
+        //gSpecialVar_0x8004 = GetCursorSelectionMonId();
+        SetMainCallback2(CB2_GlobalTradeStation);
+        ReRecreateGlobalTradeStationTask();
     }
     RunTasks();
 }
@@ -2032,7 +2035,13 @@ static bool32 UNUSED PrintServerResultMessage(u8 * state, u16 * timer, bool8 sou
 // Other states handle the general Mystery Gift menu usage.
 enum {
     GTS_STATE_TO_MAIN_MENU,
+    GTS_CONNECT_TO_SERVER,
+    GTS_PING_SERVER,
+    GTS_CHECK_RESULT,
+    GTS_RECEIVE_POKEMON,
     GTS_STATE_MAIN_MENU,
+    GTS_STATE_RETRIEVE_POKEMON_YES_NO,
+    GTS_STATE_SAVE_RETRIEVED_POKEMON,
     GTS_STATE_SEEK_SETUP,
     GTS_STATE_SEEKING,
     GTS_STATE_SEARCH_POKEMON,
@@ -2097,14 +2106,14 @@ static void CreateGlobalTradeStationTask(void)
     struct GlobalTradeStationTaskData * data = (void *)gTasks[taskId].data;
     data->state = GTS_STATE_TO_MAIN_MENU;
     data->textState = 0;
-    data->unused4 = 0;
-    data->unused5 = 0;
+    data->nextState = 0;
+    data->monDeposited = 0;
     data->isWonderNews = 0;
     data->sourceIsFriend = 0;
     data->var = 0;
     data->depositPokemon = 0;
     data->searchPokemon = 0;
-    data->unused3 = 0;
+    data->errorNum = 0;
     data->msgId = 0;
     data->clientMsg = AllocZeroed(CLIENT_MAX_MSG_SIZE);
     sGTSPokedexView = AllocZeroed(sizeof(struct GTSPokedexView));
@@ -2117,14 +2126,14 @@ static void RecreateGlobalTradeStationTask(void)
     struct GlobalTradeStationTaskData * data = (void *)gTasks[taskId].data;
     data->state = GTS_STATE_PICK_WANTED_POKEMON;
     data->textState = 0;
-    data->unused4 = 0;
-    data->unused5 = 0;
+    data->nextState = 0;
+    data->monDeposited = 0;
     data->isWonderNews = 0;
     data->sourceIsFriend = 0;
     data->var = 0;
     data->depositPokemon = 0;
     data->searchPokemon = 0;
-    data->unused3 = 0;
+    data->errorNum = 0;
     data->msgId = 0;
     data->clientMsg = AllocZeroed(CLIENT_MAX_MSG_SIZE);
     sGTSPokedexView = AllocZeroed(sizeof(struct GTSPokedexView));
@@ -2139,6 +2148,28 @@ static void RecreateGlobalTradeStationTask(void)
     //PutWindowTilemap(sGTSPokedexView->windowid);
 }
 
+static void ReRecreateGlobalTradeStationTask(void)
+{
+    u8 taskId = CreateTask(Task_GlobalTradeStation, 0);
+    struct GlobalTradeStationTaskData * data = (void *)gTasks[taskId].data;
+    data->state = GTS_STATE_RETRIEVE_POKEMON_YES_NO;
+    data->textState = 0;
+    data->nextState = 0;
+    data->monDeposited = 0;
+    data->isWonderNews = 0;
+    data->sourceIsFriend = 0;
+    data->var = 0;
+    data->depositPokemon = 0;
+    data->searchPokemon = 0;
+    data->errorNum = 0;
+    data->msgId = 0;
+    data->clientMsg = AllocZeroed(CLIENT_MAX_MSG_SIZE);
+    sGTSPokedexView = AllocZeroed(sizeof(struct GTSPokedexView));
+    ResetPokedexViewGTS(sGTSPokedexView);
+    sGTSPokedexView->windowid = AddWindow(&sWindowTemplate_PokemonSelect); //Add Pokemon list box (empty for now)
+    FillWindowPixelBuffer(sGTSPokedexView->windowid, 0x11);
+}
+
 
 static void Task_GlobalTradeStation(u8 taskId)
 {
@@ -2146,15 +2177,203 @@ static void Task_GlobalTradeStation(u8 taskId)
     u32 successMsg, input;
     const u8 *msg;
     bool8 j = TRUE;
+    char pUserID[32];  //User ID from the MA EEPROM, has max lenght of 32
+    pUserID[0]='\0';
+    char pPassword[16];    //User password from the MA EEPROM, has max lenght of 16
+    pPassword[0]='\0';
+    char maMailID[30]; //User mail ID from the MA EEPROM
+    u16 recvBufSize = 100;  //Size of received data
+    u8 pRecvData[recvBufSize];  //Buffer to hold received data
+    u16 pRecvSize;  //How many bytes were copied to pRecvData after calling maUpload once
+    char pURL[1024];
+    memcpy(pURL, "\0", 1);
+    char halftoken[53];
+    char hash[41];
+    MA_TELDATA maTel;   //MA Telephone struct
+    char *encoded_data = 0;
 
     switch (data->state)
     {
-    case GTS_STATE_TO_MAIN_MENU:
+    case GTS_STATE_TO_MAIN_MENU: //Done
+        if (!gPaletteFade.active)
+            {
+            if(maConnected()){
+                data->state = GTS_CONNECT_TO_SERVER;
+            }
+            else{
+                data->state = GTS_STATE_CLIENT_ERROR;
+            }
+        }
         data->state = GTS_STATE_MAIN_MENU;
+        break;
+    case GTS_CONNECT_TO_SERVER: //Done
+        //Initialise MA Library
+        data->errorNum = maInitLibrary();
+
+        //If there was an error stop MA Library and return the error code
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+        
+        //Get EEPROM Data
+        data->errorNum=maGetEEPROMData(&maTel, pUserID, maMailID);
+
+        //If there was an error stop MA Library and return the error code
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        //Set your password, must end in Null byte
+        memcpy(pPassword,"password1", 10);
+
+        //Makes a call and establishes a PPP connection 
+        data->errorNum=maConnectServer(&maTel,pUserID,pPassword);
+
+        //If there was an error stop MA Library and return the error code
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        data->state = GTS_PING_SERVER;
+        break;
+    case GTS_PING_SERVER: //Done
+        recvBufSize=4;
+        concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/worldexchange/info\0");
+        //Request a PID
+        data->errorNum = maDownload(pURL, NULL, 0, pRecvData, recvBufSize, &pRecvSize, pUserID, pPassword);
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        recvBufSize=(pRecvData[0]<<8)+pRecvData[1];
+        DebugPrintf("%u\n", recvBufSize);
+
+        if(recvBufSize==0x0001){
+            data->state = GTS_CHECK_RESULT;
+            data->nextState = GTS_STATE_MAIN_MENU;
+        }
+        else
+            data->state = GTS_STATE_CLIENT_ERROR;
+        
+        break;
+    case GTS_CHECK_RESULT: //Done
+        recvBufSize=0x92;
+        concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/worldexchange/result?pid\0");
+
+        //pid = gSaveBlock2Ptr->PID;
+        concat_str(pURL,(char *)gSaveBlock2Ptr->PID);
+        recvBufSize=32;
+
+        //Initial Profile Setup
+        data->errorNum = maDownload(pURL, NULL, 0, pRecvData, recvBufSize, &pRecvSize, "", "");
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        memcpy(halftoken, "sAdeqWo3voLeC5r16DYv\0", 21);
+        concat_str(halftoken,(char *)pRecvData);
+
+        sha1digest((u8 *)hash,NULL,(u8 *)halftoken,52);
+
+        //Add hash to URL
+        concat_str(pURL,"&hash=");
+        concat_str(pURL,hash);
+
+        data->errorNum = maDownload(pURL, NULL, 0, sGTSPokedexView->searchResult[0], recvBufSize, &pRecvSize, "", "");
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        if(pRecvSize==2){
+            //int result = (pRecvData[0]<<8) + pRecvData[1];
+            if(sGTSPokedexView->searchResult[0].checksum==5)
+                data->monDeposited=0;
+            else if(sGTSPokedexView->searchResult[0].checksum==4)
+                data->monDeposited=1;
+            else{
+                data->state = GTS_STATE_CLIENT_ERROR;
+                break;
+            }
+
+        }
+        else if(pRecvSize==0x92){
+            data->state = GTS_RECEIVE_POKEMON;
+            break;
+        }
+        data->state = data->nextState;
+
+        break;
+    case GTS_RECEIVE_POKEMON: //Done
+        //Copy to PC if not full
+        i = CopyBoxMonToPC(sGTSPokedexView->searchResult[0].boxmon); //Checks for full PC
+        if(i==2){   //Box is full
+            data->state = GTS_STATE_MAIN_MENU;
+            break;
+        }
+        data->state = GTS_RECEIVED_POKEMON;
+        break;
+    case GTS_RECEIVED_POKEMON: //Done
+        recvBufSize=0x2;
+        concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/worldexchange/delete?pid\0");
+
+        //pid = gSaveBlock2Ptr->PID;
+        concat_str(pURL,(char *)gSaveBlock2Ptr->PID);
+        recvBufSize=32;
+
+        //Initial Profile Setup
+        data->errorNum = maDownload(pURL, NULL, 0, pRecvData, recvBufSize, &pRecvSize, "", "");
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        memcpy(halftoken, "sAdeqWo3voLeC5r16DYv\0", 21);
+        concat_str(halftoken,(char *)pRecvData);
+
+        sha1digest((u8 *)hash,NULL,(u8 *)halftoken,52);
+
+        //Add hash to URL
+        concat_str(pURL,"&hash=");
+        concat_str(pURL,hash);
+
+        data->errorNum = maDownload(pURL, NULL, 0, sGTSPokedexView->searchResult[0], recvBufSize, &pRecvSize, "", "");
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        if(pRecvSize==2){
+            //int result = (pRecvData[0]<<8) + pRecvData[1];
+            if(sGTSPokedexView->searchResult[0].checksum==1)
+                data->monDeposited=0;
+            else{
+                data->state = GTS_STATE_CLIENT_ERROR;
+                break;
+            }
+
+        }
+
+        data->state = GTS_INBOUND_ANIMATION;
+        break;
+    case GTS_INBOUND_ANIMATION:
         break;
     case GTS_STATE_MAIN_MENU:
         // Main Mystery Gift menu, player can select Wonder Cards or News (or exit)
-        switch (GlobalTradeStation_HandleThreeOptionMenu(&data->textState, &data->var, VarGet(VAR_DEPOSIT_SPECIES)>0))
+        switch (GlobalTradeStation_HandleThreeOptionMenu(&data->textState, &data->var, data->monDeposited))
         {
         case 0: // "Search Pokemon"
             data->searchPokemon = 0;
@@ -2175,7 +2394,7 @@ static void Task_GlobalTradeStation(u8 taskId)
         case 1: // "Deposit Pokemon"
             //data->isWonderNews = TRUE;
             //if (data->depositPokemon == 0)
-            if(VarGet(VAR_DEPOSIT_SPECIES)>0)
+            if(data->monDeposited)
                 data->state = GTS_STATE_WITHDRAW_POKEMON;
             else
                 data->state = GTS_STATE_DEPOSIT_POKEMON;
@@ -2276,26 +2495,52 @@ static void Task_GlobalTradeStation(u8 taskId)
             //RemoveWindow(sGTSPokedexView->windowid);
         }
         break;
-    case GTS_STATE_FETCHING_POKEMON:
-        GTSAddTextPrinterToWindow1(gText_Communicating);
-        sGTSPokedexView->pokedexList[0].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[1].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[2].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[3].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[4].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[5].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[6].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[7].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[8].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[9].dexNum = sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum;
-        sGTSPokedexView->pokedexList[10].dexNum = 0xFFFF;
-        sGTSPokedexView->pokedexList[11].dexNum = 0xFFFF;
+    case GTS_STATE_FETCHING_POKEMON: //Done
+        GTSAddTextPrinterToWindow1(gText_Communicating);\
+
+        recvBufSize=0x92;
+        concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/worldexchange/search?pid\0");
+
+        //pid = gSaveBlock2Ptr->PID;
+        concat_str(pURL,(char *)gSaveBlock2Ptr->PID);
+        recvBufSize=0x96*7;
+
+        //Initial Profile Setup
+        data->errorNum = maDownload(pURL, NULL, 0, pRecvData, recvBufSize, &pRecvSize, "", "");
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        memcpy(halftoken, "sAdeqWo3voLeC5r16DYv\0", 21);
+        concat_str(halftoken,(char *)pRecvData);
+
+        sha1digest((u8 *)hash,NULL,(u8 *)halftoken,52);
+
+        //Add hash to URL
+        concat_str(pURL,"&hash=");
+        concat_str(pURL,hash);
+
+        data->errorNum = maDownload(pURL, NULL, 0, sGTSPokedexView->searchResult[0], recvBufSize, &pRecvSize, "", "");
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        if(pRecvSize==0){
+            data->state = GTS_STATE_MAIN_MENU;
+            break;
+        }
+
+        sGTSPokedexView->pokemonListCount=pRecvSize/0x96;
+        
         sGTSPokedexView->selectedPokemon = 0;
-        sGTSPokedexView->pokemonListCount = 10;
         CreateMonSpritesAtPos(sGTSPokedexView->selectedPokemon, 0xE);
         data->state = GTS_STATE_SELECT_FETCHED_POKEMON;
         break;
-    case GTS_STATE_SELECT_FETCHED_POKEMON:
+    case GTS_STATE_SELECT_FETCHED_POKEMON: sGTSPokedexView->pokedexList[0]
         if (j) {
             sGTSPokedexView->selectedPokemon = TryDoGTSSpriteScroll(sGTSPokedexView->selectedPokemon, 0xE);
             j=FALSE;
@@ -2306,7 +2551,7 @@ static void Task_GlobalTradeStation(u8 taskId)
             }
         }
         break;
-    case GTS_STATE_DEPOSIT_POKEMON:
+    case GTS_STATE_DEPOSIT_POKEMON: //Done
         if (!gPaletteFade.active)
         {
             //ChooseMonForTradingBoard(PARTY_MENU_TYPE_UNION_ROOM_REGISTER, CB2_ReturnToGlobalTradeStation);
@@ -2316,15 +2561,17 @@ static void Task_GlobalTradeStation(u8 taskId)
             Free(GetBgTilemapBuffer(1));
             Free(GetBgTilemapBuffer(2));
             Free(GetBgTilemapBuffer(3));
-            ChooseMonForTradingBoard(PARTY_MENU_TYPE_UNION_ROOM_REGISTER, CB2_ReturnToGlobalTradeStation);
+            //ChooseMonForTradingBoard(PARTY_MENU_TYPE_UNION_ROOM_REGISTER, CB2_ReturnToGlobalTradeStation);
+            VarSet(VAR_UNUSED_0x40FF,1);
+            EnterPokeStorage(6);
         }
         break;
-    case GTS_STATE_PICK_WANTED_POKEMON:
-        if(gSpecialVar_0x8004 > PARTY_SIZE){
+    case GTS_STATE_PICK_WANTED_POKEMON: //Done
+        if(gSpecialVar_0x8004 == 0xFF){
             gSpecialVar_0x8004=0;
             data->state = GTS_STATE_MAIN_MENU;
         }
-        else {
+        else{
             DrawTextBorderOuter(sGTSPokedexView->windowid, 0x001, 0x0F);
             CopyWindowToVram(sGTSPokedexView->windowid, COPYWIN_MAP);
             CopyWindowToVram(sGTSPokedexView->windowid, COPYWIN_GFX);
@@ -2343,7 +2590,7 @@ static void Task_GlobalTradeStation(u8 taskId)
             }
         }
         break;
-    case GTS_STATE_DEPOSITING_POKEMON:
+    case GTS_STATE_DEPOSITING_POKEMON: //Done
         input = DoPokedexSearchGTS(sGTSPokedexView->dexMode+1); //Gets alphabetical list of ABC option selected
         //sGTSPokedexView->windowid = AddWindow(&sWindowTemplate_PokemonSelect);
         //CopyWindowToVram(sGTSPokedexView->windowid, 3);
@@ -2363,7 +2610,7 @@ static void Task_GlobalTradeStation(u8 taskId)
         //    PrintGTSTopMenu(FALSE, TRUE);
         //}
         break;
-    case GTS_STATE_POKEMON_LIST:
+    case GTS_STATE_POKEMON_LIST: //Done
         sGTSPokedexView->selectedPokemon = TryDoPokedexScrollGTS(sGTSPokedexView->selectedPokemon);
         if (JOY_NEW(A_BUTTON))
         {
@@ -2381,7 +2628,7 @@ static void Task_GlobalTradeStation(u8 taskId)
             //RemoveWindow(0);
         }
         break;
-    case GTS_STATE_POKEMON_LEVEL_LIST:
+    case GTS_STATE_POKEMON_LEVEL_LIST: //Done
         sGTSPokedexView->dexMode = DoGTSListMenu(&sWindowTemplate_LevelSelect, &sListMenu_LevelsWanted, 1, LIST_MENU_TILE_NUM, LIST_MENU_PAL_NUM);
         if (sGTSPokedexView->dexMode == LIST_CANCEL) {
             PlaySE(SE_SELECT);
@@ -2396,8 +2643,14 @@ static void Task_GlobalTradeStation(u8 taskId)
         else if (PrintGTSMenuMessage(&data->textState, gText_ChooseGTSPokemonLevel))
         {
             //GetMonData(mon, MON_DATA_NICKNAME, name);
-            StringCopy_Nickname(gStringVar1, gPlayerParty[sGTSPokedexView->offerPokemon].box.nickname);
+            if(GetInPartyMenu()!=0)
+                StringCopy_Nickname(gStringVar1, gPlayerParty[sGTSPokedexView->offerPokemon].box.nickname);
+            else
+                StringCopy_Nickname(gStringVar1, gPokemonStoragePtr->boxes[StorageGetCurrentBox()][GetSavedCursorPos()].nickname);
             StringCopy(gStringVar2, GetSpeciesName(sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum));
+
+            sGTSPokedexView->searchResult[0].natDexRequest=GET_BASE_SPECIES_ID(sGTSPokedexView->pokedexList[sGTSPokedexView->selectedPokemon].dexNum);
+
             sGTSPokedexView->cursorRelPos = 0;
             sGTSPokedexView->atTop = 1;
             sGTSPokedexView->atBottom = 0;
@@ -2407,7 +2660,7 @@ static void Task_GlobalTradeStation(u8 taskId)
             //RemoveWindow(sGTSPokedexView->windowid);
         }
         break;
-    case GTS_STATE_RETURN_POKEMON_LIST:
+    case GTS_STATE_RETURN_POKEMON_LIST: //Done
         sGTSPokedexView->dexMode = DoGTSListMenu(&sWindowTemplate_ABCSelect, &sListMenu_ABCMenu, 1, LIST_MENU_TILE_NUM, LIST_MENU_PAL_NUM);
         if (PrintGTSMenuMessage(&data->textState, gText_ChooseGTSPokemon))
         {
@@ -2420,13 +2673,132 @@ static void Task_GlobalTradeStation(u8 taskId)
             //RemoveWindow(sGTSPokedexView->windowid);
         }
         break;    
-    case GTS_STATE_CONFIRM_OFFER:
+    case GTS_STATE_CONFIRM_OFFER: //Done
         input = DoGTSYesNo(&data->textState, &data->var, FALSE, gText_ConfirmOffer);
         switch (input)
         {
-        case 0: // Yes
+        case 0: // Yes, Upload Pokemon
+            recvBufSize=0x92;
+            concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/worldexchange/post?pid=\0");
+
+            //pid = gSaveBlock2Ptr->PID;
+            concat_str(pURL,(char *)gSaveBlock2Ptr->PID);
+            recvBufSize=32;
+
+            //Initial Profile Setup
+            data->errorNum = maDownload(pURL, NULL, 0, pRecvData, recvBufSize, &pRecvSize, "", "");
+            if(data->errorNum !=0){
+                maKill();
+                data->state = GTS_STATE_CLIENT_ERROR;
+                break;
+            }
+
+            memcpy(halftoken, "sAdeqWo3voLeC5r16DYv\0", 21);
+            concat_str(halftoken,(char *)pRecvData);
+
+            sha1digest((u8 *)hash,NULL,(u8 *)halftoken,52);
+
+            //Add hash to URL
+            concat_str(pURL,"&hash=");
+            concat_str(pURL,hash);
+
+            //Add data to URL
+            concat_str(pURL,"&data=");
+
+
+
+            sGTSPokedexView->searchResult[0].pid=gSaveBlock2Ptr->PID;
+            memcpy(sGTSPokedexView->searchResult[0].boxmon,&gPokemonStoragePtr->boxes[StorageGetCurrentBox()][GetSavedCursorPos()]);
+            sGTSPokedexView->searchResult[0].dexNum=GET_BASE_SPECIES_ID(GetBoxMonData(sGTSPokedexView->searchResult[0].boxmon,MON_DATA_SPECIES,NULL));
+            sGTSPokedexView->searchResult[0].gender=GetBoxMonData(sGTSPokedexView->searchResult[0].boxmon,   ,NULL);
+            sGTSPokedexView->searchResult[0].level=GetBoxMonData(sGTSPokedexView->searchResult[0].boxmon,MON_DATA_LEVEL,NULL);
+            //sGTSPokedexView->searchResult[0].natDexRequest=gSaveBlock2Ptr->PID;  get before
+            sGTSPokedexView->searchResult[0].genderRequest=0x01;
+
+            switch(sGTSPokedexView->dexMode)
+            {
+                case 0:
+                    sGTSPokedexView->searchResult[0].minLevel=1;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 1:
+                    sGTSPokedexView->searchResult[0].minLevel=1;
+                    sGTSPokedexView->searchResult[0].maxLevel=9;
+                    break;
+                case 2:
+                    sGTSPokedexView->searchResult[0].minLevel=10;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 3:
+                    sGTSPokedexView->searchResult[0].minLevel=20;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 4:
+                    sGTSPokedexView->searchResult[0].minLevel=30;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 5:
+                    sGTSPokedexView->searchResult[0].minLevel=40;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 6:
+                    sGTSPokedexView->searchResult[0].minLevel=50;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 7:
+                    sGTSPokedexView->searchResult[0].minLevel=60;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 8:
+                    sGTSPokedexView->searchResult[0].minLevel=70;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 9:
+                    sGTSPokedexView->searchResult[0].minLevel=80;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                case 10:
+                    sGTSPokedexView->searchResult[0].minLevel=90;
+                    sGTSPokedexView->searchResult[0].maxLevel=100;
+                    break;
+                    
+            }
+            sGTSPokedexView->searchResult[0].trainerGender=GetBoxMonData(sGTSPokedexView->searchResult[0].boxmon,MON_DATA_OT_GENDER,NULL);
+            sGTSPokedexView->searchResult[0].trainerID=GetBoxMonData(sGTSPokedexView->searchResult[0].boxmon,MON_DATA_OT_ID,NULL);
+            sGTSPokedexView->searchResult[0].secretID=GetBoxMonData(sGTSPokedexView->searchResult[0].boxmon,MON_DATA_OT_ID,NULL) >> 16;
+            sGTSPokedexView->searchResult[0].OTName=GetBoxMonData(sGTSPokedexView->searchResult[0].boxmon,MON_DATA_OT_NAME,NULL);
+            sGTSPokedexView->searchResult[0].country=0;
+            sGTSPokedexView->searchResult[0].region=0;
+            sGTSPokedexView->searchResult[0].trainerClass=0;
+            sGTSPokedexView->searchResult[0].isExchanged=FALSE;
+            sGTSPokedexView->searchResult[0].gameVersion=VERSION_EMERALD;
+            sGTSPokedexView->searchResult[0].romHackID=MODIFIER_GLIMMERING_EMERALD;
+            sGTSPokedexView->searchResult[0].romHackVersion=SAVE_VERSION;
+            sGTSPokedexView->searchResult[0].language=LANGUAGE_ENGLISH;
+
+            //Determine checksum for pokemon data and encrypt data
+            sGTSPokedexView->searchResult[0].checksum=0;
+            sGTSPokedexView->searchResult[0].checksum=encrypt_data(sGTSPokedexView->searchResult[0].pid, (char *)sGTSPokedexView->searchResult[0], sizeof(sGTSPokedexView->searchResult[0]));
+
+            *encoded_data=base64_encode(sGTSPokedexView->searchResult[0].checksum, (char *)sGTSPokedexView->searchResult[0], sizeof(sGTSPokedexView->searchResult[0])+4);
+            concat_str(pURL,encoded_data);
+
+            data->errorNum = maDownload(pURL, NULL, 0, pRecvData, recvBufSize, &pRecvSize, "", "");
+            if(data->errorNum !=0){
+                maKill();
+                data->state = GTS_STATE_CLIENT_ERROR;
+                break;
+            }
+
+            if(pRecvData==0x0001){
+                data->state = GTS_STATE_MAIN_MENU;
+            }
+            else{
+                data->state = GTS_STATE_SERVER_ERROR;
+                break;
+            }
+
             DoGTSDepositScene();
-            data->state = GTS_STATE_WAIT;
             break;
         case 1: // No
         case MENU_B_PRESSED:
@@ -2438,55 +2810,98 @@ static void Task_GlobalTradeStation(u8 taskId)
         break;
     case GTS_STATE_WAIT:
         break;
-    case GTS_STATE_WITHDRAW_POKEMON:
+    case GTS_STATE_WITHDRAW_POKEMON:  //Done
         // Choose where to access the Wonder Card/News from
-        switch (GlobalTradeStation_HandleThreeOptionMenu(&data->textState, &data->var, TRUE))
-        {
-        case 0: // "Wireless Communication"
-            ClearTextWindow();
-            data->state = GTS_STATE_CLIENT_LINK_START;
-            data->sourceIsFriend = FALSE;
-            break;
-        case 1: // "Friend"
-            ClearTextWindow();
-            data->state = GTS_STATE_CLIENT_LINK_START;
-            data->sourceIsFriend = TRUE;
-            break;
-        case LIST_CANCEL:
-            ClearTextWindow();
-            if (ValidateCardOrNews(data->isWonderNews))
-            {
-                data->state = GTS_STATE_LOAD_GIFT;
-            }
-            else
-            {
-                data->state = GTS_STATE_TO_MAIN_MENU;
-                PrintGTSTopMenu(FALSE, FALSE);
-            }
-            break;
-        }
-        break;
-    case GTS_STATE_CLIENT_LINK_START:
-        *gStringVar1 = EOS;
-        *gStringVar2 = EOS;
-        *gStringVar3 = EOS;
+        recvBufSize=0x92;
+        concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/worldexchange/get?pid\0");
 
-        switch (data->isWonderNews)
-        {
-        case FALSE:
-            if (data->sourceIsFriend == TRUE)
-                CreateTask_LinkMysteryGiftWithFriend(ACTIVITY_WONDER_CARD);
-            else if (data->sourceIsFriend == FALSE)
-                CreateTask_LinkMysteryGiftOverWireless(ACTIVITY_WONDER_CARD);
-            break;
-        case TRUE:
-            if (data->sourceIsFriend == TRUE)
-                CreateTask_LinkMysteryGiftWithFriend(ACTIVITY_WONDER_NEWS);
-            else if (data->sourceIsFriend == FALSE)
-                CreateTask_LinkMysteryGiftOverWireless(ACTIVITY_WONDER_NEWS);
+        concat_str(pURL,(char *)gSaveBlock2Ptr->PID);
+
+        //Get hash
+        data->errorNum = maDownload(pURL, NULL, 0, pRecvData, recvBufSize, &pRecvSize, "", "");
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
             break;
         }
-        data->state = GTS_STATE_CLIENT_LINK_WAIT;
+
+        memcpy(halftoken, "sAdeqWo3voLeC5r16DYv\0", 21);
+        concat_str(halftoken,(char *)pRecvData);
+
+        sha1digest((u8 *)hash,NULL,(u8 *)halftoken,52);
+
+        //Add hash to URL
+        concat_str(pURL,"&hash=");
+        concat_str(pURL,hash);
+
+        data->errorNum = maDownload(pURL, NULL, 0, sGTSPokedexView->searchResult[0], 0x96, &pRecvSize, "", "");
+        if(data->errorNum !=0){
+            maKill();
+            data->state = GTS_STATE_CLIENT_ERROR;
+            break;
+        }
+
+        if(pRecvSize!==0x96){
+            data->state = GTS_STATE_SERVER_ERROR;
+            break;
+        }
+
+        ShowPokemonSummaryScreen(SUMMARY_MODE_BOX, sGTSPokedexView->searchResult[0].boxmon, 0, 0, CB2_ReturnToGlobalTradeStationFromSummary);
+
+        break;
+    case GTS_STATE_RETRIEVE_POKEMON_YES_NO: //Done
+        input = DoGTSYesNo(&data->textState, &data->var, FALSE, gText_ConfirmOffer);
+        switch (input)
+        {
+        case 0: // Yes, Retrieve Pokemon
+            //Check PC isn't full
+            if(GiveBoxMonToPlayer(sGTSPokedexView->searchResult[0].boxmon)==2){
+                data->state = GTS_STATE_CLIENT_ERROR;
+                break;
+            }
+            break;
+        case 1: // Go to Main Menu
+        case MENU_B_PRESSED:
+            data->state = GTS_STATE_MAIN_MENU;
+        break;
+    case GTS_STATE_SAVE_RETRIEVED_POKEMON:  //Done
+        if (SaveOnMysteryGiftMenu(&data->textState))
+            // Choose where to access the Wonder Card/News from
+            recvBufSize=0x2;
+            concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/worldexchange/return?pid\0");
+
+            concat_str(pURL,(char *)gSaveBlock2Ptr->PID);
+
+            //Get hash
+            data->errorNum = maDownload(pURL, NULL, 0, pRecvData, recvBufSize, &pRecvSize, "", "");
+            if(data->errorNum !=0){
+                maKill();
+                data->state = GTS_STATE_CLIENT_ERROR;
+                break;
+            }
+
+            memcpy(halftoken, "sAdeqWo3voLeC5r16DYv\0", 21);
+            concat_str(halftoken,(char *)pRecvData);
+
+            sha1digest((u8 *)hash,NULL,(u8 *)halftoken,52);
+
+            //Add hash to URL
+            concat_str(pURL,"&hash=");
+            concat_str(pURL,hash);
+
+            data->errorNum = maDownload(pURL, NULL, 0, pRecvData, 0x4, &pRecvSize, "", "");
+            if(data->errorNum !=0){
+                maKill();
+                data->state = GTS_STATE_CLIENT_ERROR;
+                break;
+            }
+
+            if(pRecvData==0x0001){
+                data->state = GTS_STATE_MAIN_MENU;
+            }
+            else{
+                data->state = GTS_STATE_SERVER_ERROR;
+            }
         break;
     case GTS_STATE_CLIENT_LINK_WAIT:
         if (gReceivedRemoteLinkPlayers != 0)
@@ -2628,7 +3043,7 @@ static void Task_GlobalTradeStation(u8 taskId)
             if (!successMsg)
             {
                 // Did not receive card/news, return to main menu
-                data->state = GTS_STATE_TO_MAIN_MENU;
+                data->state = GTS_STATE_MAIN_MENU;
                 PrintGTSTopMenu(FALSE, FALSE);
             }
             else
@@ -2749,13 +3164,13 @@ static void Task_GlobalTradeStation(u8 taskId)
     case GTS_STATE_TOSSED:
         if (PrintThrownAway(&data->textState, data->isWonderNews))
         {
-            data->state = GTS_STATE_TO_MAIN_MENU;
+            data->state = GTS_STATE_MAIN_MENU;
             PrintGTSTopMenu(FALSE, FALSE);
         }
         break;
     case GTS_STATE_GIFT_INPUT_EXIT:
         if (ExitWonderCardOrNews(data->isWonderNews, FALSE))
-            data->state = GTS_STATE_TO_MAIN_MENU;
+            data->state = GTS_STATE_MAIN_MENU;
         break;
     case GTS_STATE_RECEIVE:
         if (ExitWonderCardOrNews(data->isWonderNews, TRUE))
@@ -2831,7 +3246,7 @@ static void Task_GlobalTradeStation(u8 taskId)
     case GTS_STATE_SERVER_ERROR:
         if (PrintGTSMenuMessage(&data->textState, gText_CommunicationError))
         {
-            data->state = GTS_STATE_TO_MAIN_MENU;
+            data->state = GTS_STATE_EXIT;
             PrintGTSTopMenu(FALSE, FALSE);
         }
         break;
@@ -2853,3 +3268,42 @@ static void LoadMysteryGiftTextboxBorder(u8 bgId)
 {
     DecompressAndLoadBgGfxUsingHeap(bgId, sTextboxBorder_Gfx, 0x100, 0, 0);
 }
+
+
+/*
+Offset 			Contents
+int 0x00-0x03 	X	Checksum (sum of all bytes xor 0x2db842b2)
+int 0x04-0x07 	X	pid
+bin 0x08-0x6C 	X	Encrypted party pokemon data structure
+sma 0x6D-0x6E 	X	Nat. Dex ID
+bin 0x6F 		X	Gender
+bin 0x70 		X	Level
+sma 0x71-0x72 	X	Requested Nat. Dex ID
+bin 0x73 		X	Requested Gender
+bin 0x74 		X	Requested Min Level
+bin 0x75 		X	Requested Max Level
+bin 0x76 		X	Trainer gender
+sma 0x77-0x78	X	Trainer ID
+sma 0x79-0x7A	X	Secret ID
+str 0x7B-0x8A	X	OT Name (Unicode, must end with 0xFFFF)
+bin 0x8B 		X	Country
+bin 0x8C 		X	Region
+bin 0x8D 		X	Trainer class/sprite
+boo 0x8E 		X	Is Exchanged Flag (Always 0)
+sma 0x8F-0x90   X	Game version
+sma 0x91-0x92	X	Game RomHackID
+sma 0x93-0x94		X	RomHackVer
+bin 0x95 		X	Language
+
+
+worldexchange/search.asp
+
+u16 species
+u8 gender
+u8 minlevel
+u8 maxLevel
+u8 pageNo
+u8 resultscount = 7, how many pokemon requested
+u8 country
+
+*/

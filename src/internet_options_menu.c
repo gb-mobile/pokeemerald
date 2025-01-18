@@ -1485,6 +1485,7 @@ static void Task_InternetOptions(u8 taskId)
         data->state = INTERNET_STATE_MAIN_MENU;
         break;
     case INTERNET_MA_CONNECTED:
+        DebugPrintf("INTERNET_MA_CONNECTED");
         if (!gPaletteFade.active)
             {
             if(maConnected()){
@@ -1496,6 +1497,7 @@ static void Task_InternetOptions(u8 taskId)
         }
         break;
     case INTERNET_CONNECT_TO_SERVER:
+        DebugPrintf("INTERNET_CONNECT_TO_SERVER");
         //Initialise MA Library
         data->errorNum = maInitLibrary();
 
@@ -1529,6 +1531,7 @@ static void Task_InternetOptions(u8 taskId)
         data->state = INTERNET_PING_SERVER;
         break;
     case INTERNET_PING_SERVER:
+        DebugPrintf("INTERNET_PING_SERVER");
         recvBufSize=4;
         concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/worldexchange/info\0");
         //Request a PID
@@ -1539,6 +1542,7 @@ static void Task_InternetOptions(u8 taskId)
         }
 
         recvBufSize=(pRecvData[0]<<8)+pRecvData[1];
+        DebugPrintf("%u\n", recvBufSize);
 
         if(recvBufSize==0x0001){
             if(gSaveBlock2Ptr->PID==0xFFFFFFFF){
@@ -1551,6 +1555,7 @@ static void Task_InternetOptions(u8 taskId)
         }
         break;
     case INTERNET_SET_PROFILE:
+        DebugPrintf("INTERNET_SET_PROFILE");
         concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/common/setprofile?pid=\0");
         //Turn hex to str
         ConvertIntToHexStringN_v2(pidhex, gSaveBlock2Ptr->PID,STR_CONV_MODE_RIGHT_ALIGN,8);
@@ -1616,6 +1621,7 @@ static void Task_InternetOptions(u8 taskId)
         
         break;
     case INTERNET_ASK_PID:
+        DebugPrintf("INTERNET_ASK_PID");
         input = DoGTSYesNo(&data->textState, &data->var, FALSE, gText_CreateFriendCode);
         switch (input)
         {
@@ -1630,12 +1636,14 @@ static void Task_InternetOptions(u8 taskId)
         }
         break;
     case INTERNET_CONNECTING:
+        DebugPrintf("INTERNET_CONNECTING");
         if (PrintInternetOptionsMenuMessage(&data->textState, gJPText_Connecting))
         {
             data->state = data->nextstate;
         }
         break;
     case INTERNET_GET_PID:
+        DebugPrintf("INTERNET_GET_PID");
         concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/common/createprofile?pid=\0");
 
         //Will be receiving a 32-byte long token
@@ -1734,6 +1742,7 @@ static void Task_InternetOptions(u8 taskId)
         data->nextstate = INTERNET_SET_PROFILE;
         break;
     case INTERNET_SHOW_FRIENDCODE:
+        DebugPrintf("INTERNET_SHOW_FRIENDCODE");
         //Convert PID to FC and display it
         concat_str(pURL,"Your Friend Code is:\n");
         pid_to_fc(gSaveBlock2Ptr->PID,(u8 *)hash);
@@ -1751,6 +1760,7 @@ static void Task_InternetOptions(u8 taskId)
         data->state = INTERNET_INITIAL_SETUP;
         break;
     case INTERNET_INITIAL_SETUP:
+        DebugPrintf("INTERNET_INITIAL_SETUP");
         concat_str(pURL,"http://www.PutYourDomainHere.com/pokemonrse/common/setprofile?pid=\0");
         pid = gSaveBlock2Ptr->PID;
         concat_str(pURL,(char *)pid);
@@ -1852,6 +1862,7 @@ static void Task_InternetOptions(u8 taskId)
         }
         break;
     case INTERNET_STATE_MAIN_MENU:
+        DebugPrintf("INTERNET_STATE_MAIN_MENU");
         // Main Mystery Gift menu, player can select Wonder Cards or News (or exit)
         switch (InternetOptions_HandleThreeOptionMenu(&data->textState, &data->var, 0))
         {
@@ -1880,10 +1891,12 @@ static void Task_InternetOptions(u8 taskId)
         }
         break;
     case INTERNET_SAVE_GAME:
+        DebugPrintf("INTERNET_SAVE_GAME");
         if (SaveOnInternetOptionMenu(&data->textState))
             data->state = data->nextstate;
         break;
     case INTERNET_STATE_EXIT:
+        DebugPrintf("INTERNET_STATE_EXIT");
         CloseLink();
         Free(data->clientMsg);
         DestroyTask(taskId);

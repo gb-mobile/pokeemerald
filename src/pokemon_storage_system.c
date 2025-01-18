@@ -441,9 +441,11 @@ struct PokemonStorageSystemData
     u8 wallpaperOffset;
     u8 infostate;
     u8 scrollToBoxIdUnused; // Never read
-    u16 scrollUnused2; // Never read
-    s16 scrollDirectionUnused; // Never read.
-    u16 scrollUnused3; // Never read
+    u16 searchMon; // Mon to search for
+    u8 searchMinLevel; // Min level to search.
+    u8 searchMaxLevel; // Max level to search
+    u8 searchGender;
+    u8 scrollUnused3; // Never read
     u16 scrollUnused4; // Never read
     u16 scrollUnused5; // Never read
     u16 scrollUnused6; // Never read
@@ -2028,8 +2030,12 @@ void EnterPokeStorage(u8 boxOption)
     sStorage = Alloc(sizeof(*sStorage));
     if (sStorage == NULL)
     {
-        if(boxOption == OPTION_SELECT_MON)
-            SetMainCallback2(CB2_ReturnToFieldContinueScript);
+        if(boxOption == OPTION_SELECT_MON){
+            if(VarGet(VAR_UNUSED_0x40FF)==1)
+                SetMainCallback2(CB2_ReturnToGlobalTradeStation);
+            else
+                SetMainCallback2(CB2_ReturnToFieldContinueScript);
+        }
         else
             SetMainCallback2(CB2_ExitPokeStorage);
     }
@@ -2040,6 +2046,12 @@ void EnterPokeStorage(u8 boxOption)
         sMovingItemId = ITEM_NONE;
         sStorage->state = 0;
         sStorage->infostate = 0;
+        if(boxOption == OPTION_SELECT_MON){
+            sStorage->searchMon = SPECIES_TORCHIC; // Mon to search for
+            sStorage->searchMinLevel = 0;
+            sStorage->searchMaxLevel = 100;
+            sStorage->searchGender = MON_MALE;
+        }
         sStorage->taskId = CreateTask(Task_InitPokeStorage, 3);
         sLastUsedBox = StorageGetCurrentBox();
         SetMainCallback2(CB2_PokeStorage);
@@ -2053,7 +2065,10 @@ static void CB2_ReturnToPokeStorage(void)
     if (sStorage == NULL)
     {
         if(sStorage->boxOption == OPTION_SELECT_MON)
-            SetMainCallback2(CB2_ReturnToFieldContinueScript);
+            if(VarGet(VAR_UNUSED_0x40FF)==1)
+                SetMainCallback2(CB2_ReturnToGlobalTradeStation);
+            else
+                SetMainCallback2(CB2_ReturnToFieldContinueScript);
         else
             SetMainCallback2(CB2_ExitPokeStorage);
     }
@@ -2105,7 +2120,7 @@ static void InitStartingPosData(void)
 
 static void SetMonIconTransparency(void)
 {
-    if (sStorage->boxOption == OPTION_MOVE_ITEMS)
+    if (sStorage->boxOption == OPTION_MOVE_ITEMS || sStorage->boxOption == OPTION_SELECT_MON)
     {
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT2_ALL);
         SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(7, 11));
@@ -2745,7 +2760,7 @@ static void Task_OnSelectedMon(u8 taskId)
             if(sInPartyMenu)
                 VarSet(VAR_RESULT,GetBoxMonData(&gPlayerParty[sCursorPosition].box, MON_DATA_SPECIES));
             else
-                VarSet(VAR_RESULT,GetBoxMonDataAt(sStorage->newCurrBoxId, sCursorPosition, MON_DATA_SPECIES_OR_EGG));
+                VarSet(VAR_RESULT,GetBoxMonDataAt(StorageGetCurrentBox(), sCursorPosition, MON_DATA_SPECIES_OR_EGG));
             VarSet(gSpecialVar_0x8004,sCursorPosition);
             SaveCursorPos();
             sStorage->screenChangeType = SCREEN_CHANGE_EXIT_BOX;
@@ -3802,7 +3817,10 @@ static void Task_ChangeScreen(u8 taskId)
     case SCREEN_CHANGE_EXIT_BOX:
     default:
         if(sStorage->boxOption == OPTION_SELECT_MON){
-            SetMainCallback2(CB2_ReturnToFieldContinueScript);
+            if(VarGet(VAR_UNUSED_0x40FF)==1)
+                SetMainCallback2(CB2_ReturnToGlobalTradeStation);
+            else
+                SetMainCallback2(CB2_ReturnToFieldContinueScript);
             VarSet(gSpecialVar_0x8004,0xFF);
         }
         else
@@ -4576,6 +4594,26 @@ static void InitBoxMonSprites(u8 boxId)
                 sStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
         }
     }
+
+    // If in select pokemon mode, set all Pokémon icons with no item to be transparent
+    if (sStorage->boxOption == OPTION_SELECT_MON)
+    {
+        u8 monlevel = 0;
+        u16 monspecies = 0;
+        species = sStorage->searchMon;
+        u8 gender = sStorage->searchGender;
+        for (boxPosition = 0; boxPosition < IN_BOX_COUNT; boxPosition++)
+        {
+            monlevel = GetBoxMonDataAt(boxId, boxPosition, MON_DATA_LEVEL);
+            monspecies = GetBoxMonDataAt(boxId, boxPosition, MON_DATA_SPECIES);
+            if (species == 0)
+                species = monspecies;
+            if (gender == 1)
+                gender = GetGenderFromSpeciesAndPersonality(species, GetBoxMonDataAt(boxId, boxPosition, MON_DATA_PERSONALITY));
+            if (monspecies != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(monspecies, GetBoxMonDataAt(boxId, boxPosition, MON_DATA_PERSONALITY)) != gender)
+                sStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
+        }
+    }
 }
 
 static void CreateBoxMonIconAtPos(u8 boxPosition)
@@ -4679,7 +4717,7 @@ static u8 CreateBoxMonIconsInColumn(u8 column, u16 distance, s16 speed)
     u8 iconsCreated = 0;
     u8 boxPosition = column;
 
-    if (sStorage->boxOption != OPTION_MOVE_ITEMS)
+    if (sStorage->boxOption != OPTION_MOVE_ITEMS && sStorage->boxOption != OPTION_SELECT_MON)
     {
         for (i = 0; i < IN_BOX_ROWS; i++)
         {
@@ -4694,6 +4732,43 @@ static u8 CreateBoxMonIconsInColumn(u8 column, u16 distance, s16 speed)
                     sStorage->boxMonsSprites[boxPosition]->sSpeed = speed;
                     sStorage->boxMonsSprites[boxPosition]->sScrollInDestX = xDest;
                     sStorage->boxMonsSprites[boxPosition]->callback = SpriteCB_BoxMonIconScrollIn;
+                    iconsCreated++;
+                }
+            }
+            boxPosition += IN_BOX_COLUMNS;
+            y += 24;
+        }
+    }
+    else if (sStorage->boxOption == OPTION_SELECT_MON)
+    {
+        // Separate case for Move Items mode is used
+        // to create the icons with the proper blend
+        
+        u8 monlevel = 0;
+        u16 species = sStorage->searchMon;
+        u8 gender = sStorage->searchGender;
+        for (i = 0; i < IN_BOX_ROWS; i++)
+        {
+            if (sStorage->boxSpecies[boxPosition] != SPECIES_NONE)
+            {
+                sStorage->boxMonsSprites[boxPosition] = CreateMonIconSprite(sStorage->boxSpecies[boxPosition],
+                                                                                        sStorage->boxPersonalities[boxPosition],
+                                                                                        x, y, 2, subpriority);
+                if (sStorage->boxMonsSprites[boxPosition] != NULL)
+                {
+                    sStorage->boxMonsSprites[boxPosition]->sDistance = distance;
+                    sStorage->boxMonsSprites[boxPosition]->sSpeed = speed;
+                    sStorage->boxMonsSprites[boxPosition]->sScrollInDestX = xDest;
+                    sStorage->boxMonsSprites[boxPosition]->callback = SpriteCB_BoxMonIconScrollIn;
+
+                    monlevel = GetBoxMonDataAt(sStorage->incomingBoxId, boxPosition, MON_DATA_LEVEL);
+                    if (species == 0)
+                        species = sStorage->boxSpecies[boxPosition];
+                    if (gender == 1)
+                        gender = GetGenderFromSpeciesAndPersonality(sStorage->boxSpecies[boxPosition], sStorage->boxPersonalities[boxPosition]);
+                    
+                    if (sStorage->boxSpecies[boxPosition] != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(sStorage->boxSpecies[boxPosition], sStorage->boxPersonalities[boxPosition]) != gender)
+                        sStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
                     iconsCreated++;
                 }
             }
@@ -4876,6 +4951,20 @@ static void CreatePartyMonsSprites(bool8 visible)
         for (i = 0; i < PARTY_SIZE; i++)
         {
             if (sStorage->partySprites[i] != NULL && GetMonData(&gPlayerParty[i], MON_DATA_HELD_ITEM) == ITEM_NONE)
+                sStorage->partySprites[i]->oam.objMode = ST_OAM_OBJ_BLEND;
+        }
+    }
+
+    u8 monlevel = 0;
+    species = sStorage->searchMon;
+    u8 gender = sStorage->searchGender;
+
+    if (sStorage->boxOption == OPTION_SELECT_MON)
+    {
+        for (i = 0; i < PARTY_SIZE; i++)
+        {
+            monlevel = GetMonData(&gPlayerParty[i], MON_DATA_LEVEL);
+            if (sStorage->partySprites[i] != NULL && (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG), GetMonData(&gPlayerParty[i], MON_DATA_PERSONALITY)) != gender))
                 sStorage->partySprites[i]->oam.objMode = ST_OAM_OBJ_BLEND;
         }
     }

@@ -2768,8 +2768,7 @@ static u32 TradeGetMultiplayerId(void)
     return 0;
 }
 
-static void 
-LoadTradeMonPic(u8 whichParty, u8 state)
+static void LoadTradeMonPic(u8 whichParty, u8 state)
 {
     int pos = 0;
     struct Pokemon *mon = NULL;
@@ -5097,11 +5096,28 @@ void DoGTSDepositScene(void)
     BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
 }
 
+void DoGTSWithdrawScene(void)
+{
+    LockPlayerFieldControls();
+    CreateTask(Task_GTSWithdraw, 10);
+    BeginNormalPaletteFade(PALETTES_ALL, 0, 0, 16, RGB_BLACK);
+}
+
 static void Task_GTSDeposit(u8 taskId)
 {
     if (!gPaletteFade.active)
     {
         SetMainCallback2(CB2_GTSDeposit);
+        gFieldCallback = FieldCB_ContinueScriptHandleMusic;
+        DestroyTask(taskId);
+    }
+}
+
+static void Task_GTSWithdraw(u8 taskId)
+{
+    if (!gPaletteFade.active)
+    {
+        SetMainCallback2(CB2_GTSWithdraw);
         gFieldCallback = FieldCB_ContinueScriptHandleMusic;
         DestroyTask(taskId);
     }

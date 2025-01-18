@@ -21,6 +21,32 @@ struct PokedexListItem
     u16 owned:1;
 };
 
+struct GTSResult
+{
+    u32 checksum;
+    u32 pid;
+    struct BoxPokemon boxmon;
+    u16 dexNum;
+    u8 gender;
+    u8 level;
+    u16 natDexRequest;
+    u8 genderRequest;
+    u8 minLevel;
+    u8 maxLevel;
+    u8 trainerGender;
+    u16 trainerID;
+    u16 secretID;
+    char OTName[7];
+    u8 country;
+    u8 region;
+    u8 trainerClass;
+    bool8 isExchanged;
+    u16 gameVersion;
+    u16 romHackID;
+    u16 romHackVersion;
+    u8 language;
+};
+
 struct GTSPokedexView
 {
     struct PokedexListItem pokedexList[NATIONAL_DEX_COUNT + 1];
@@ -30,11 +56,7 @@ struct GTSPokedexView
     s16 dexMode;
     u16 windowid;
     u16 dexOrder;
-    u16 dexOrderBackup;
-    u16 seenCount;
-    u16 ownCount;
     u16 monSpriteIds[MAX_MONS_ON_SCREEN];
-    u16 selectedMonSpriteId;
     u16 cursorRelPos;
     u8 atTop;
     u8 atBottom;
@@ -46,14 +68,9 @@ struct GTSPokedexView
     u16 scrollMonIncrement;
     u16 maxScrollTimer;
     u16 scrollSpeed;
+    u8 numResults;
     u8 currentPage; //keep
-    u8 currentPageBackup;
-    bool8 isSearchResults:1; //keep
-    u8 selectedScreen;
-    u8 screenSwitchState;
-    u8 menuIsOpen;
-    u16 menuCursorPos;
-    s16 menuY;     //Menu Y position (inverted because we use REG_BG0VOFS for this)
+    struct GTSResult searchResult[7];
 };
 
 //extern EWRAM_DATA struct GTSPokedexView *sGTSPokedexView;

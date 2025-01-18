@@ -148,6 +148,87 @@ int maWait(void){
     return (maError << 16) | maErrorProtocol;
 }
 
+const char *ma_errmesg(int err){
+
+    int eh, el;
+
+    eh = (err >> 16) & 0xff;
+    el = err & 0xfff;
+
+    if (eh == 0x10)
+	return mesgs[0];
+    else if (eh == 0x11 || eh == 0x13)
+	return mesgs[1];
+    else if (eh == 0x12)
+	return mesgs[2];
+    else if (eh == 0x14 || eh == 0x25)
+	return mesgs[8];
+    else if (eh == 0x15)
+	return mesgs[3];
+    else if (eh == 0x16 || eh == 0x17 || eh == 0x20 || eh == 0x21)
+	return mesgs[4];
+    else if (eh == 0x22)
+	return mesgs[5];
+    else if (eh == 0x23)
+	return mesgs[6];
+    else if (eh == 0x24)
+	return mesgs[16];
+    else if (eh == 0x26)
+	return mesgs[14];
+    else if (eh == 0x30) {
+	if (el == 0x000 || el == 0x500 || el == 0x501 || el == 0x502 ||
+	    el == 0x503 || el == 0x504)
+	    return mesgs[4];
+	else if (el == 0x450 || el == 0x550 || el == 0x551 || el == 0x553)
+	    return mesgs[10];
+	else
+	    return mesgs[16];
+    }
+    else if (eh == 0x31) {
+	if (el == 0x000 || el == 0x004)
+	    return mesgs[4];
+	else if (el == 0x002)
+	    return mesgs[11];
+	else if (el == 0x003)
+	    return mesgs[12];
+	else
+	    return mesgs[16];
+    }
+    else if (eh == 0x32) {
+	if (el == 0x000 || el == 0x301 || el == 0x302 || el == 0x400 ||
+	    el == 0x401 || el == 0x405 || el == 0x406 || el == 0x407 ||
+	    el == 0x501)
+	    return mesgs[4];
+	else if (el == 0x403 || el == 0x404)
+	    return mesgs[13];
+	else if (el == 0x408)
+	    return mesgs[14];
+	else if (el == 0x503)
+	    return mesgs[9];
+	else
+	    return mesgs[7];
+    }
+    else if (eh == 0x33) {
+	if (el == 0x102 || el == 0x299)
+	    return mesgs[15];
+	else if (el == 0x103)
+	    return mesgs[17];
+	else if (el == 0x104 || el == 0x105 || el == 0x203 || el == 0x206)
+	    return mesgs[19];
+	else if (el == 0x106)
+	    return mesgs[18];
+	else if (el == 0x201)
+	    return mesgs[20];
+	else if (el == 0x202 || el == 0x204)
+	    return mesgs[4];
+	else
+	    return mesgs[7];
+    }
+    else
+	return mesgs[21];
+}
+	   
+
 //Example function to show how to download a Pokemon
 //This function:
 //1. Initialises the Mobile Adapter Library

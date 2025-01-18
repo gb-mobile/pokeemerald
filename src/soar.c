@@ -51,6 +51,20 @@
 #define MIN_Y Q_8_7(0, 0)
 #define MAX_Y Q_8_7(20*8, 0)
 
+#define M7_D		128//256	 //!< Focal length
+#define M7_D_SHIFT	8	 //!< Focal shift
+#define M7O_NORM	  2	 //!< Object renormalization shift (by /4)
+
+// View frustum limits
+#define M7_LEFT	 (-120)	  //!< Viewport left
+#define M7_RIGHT	 120		//!< Viewport right
+#define M7_TOP		80		//!< Viewport top (y-axis up)
+#define M7_BOTTOM   (-80)	   //!< Viewport bottom (y-axis up!)
+#define M7_NEAR	   24		//!< Near plane (objects)
+#define M7_FAR	   512		//!< Far plane (objects)
+
+#define M7_FAR_BG	768		//!< Far plane (floor)
+
 static void CB2_LoadSoarGraphics(void);
 //static void DoSoarFieldEffectsCB2(void);
 static void SoarVBlankCallback(void);
@@ -59,6 +73,7 @@ static void CB2_HandleInput(void);
 static void PromptLandCB2(void);
 static void ProcessYesNoCB2(void);
 static void WarpCB2(void);
+static void PrepSprite(struct Sprite *sprite);
 //static void FadeOutVBlankCallback(void);
 //static void CB2_FadeOut(void);
 static u8 windid;
@@ -178,7 +193,9 @@ static u16 sPrevMapSection;
 static u16 sStartMapSection;
 
 static u8 sEonSpriteId;
-//static u8 sShadowSpriteId;
+static u8 sShadowSpriteId;
+
+static u8 isNight;
 
 static u8 sMirageSpots[3];
 
@@ -215,7 +232,7 @@ void CB2_InitSoar(void)
 			u8 i,j=0;
 			bool8 inCave;
 			struct SiiRtcInfo rtc;
-            RtcGetDateTime(&rtc);
+			RtcGetDateTime(&rtc);
 			ClearDialogWindowAndFrame(0, 1);
 			RegionMap_GetSectionCoordsFromCurrFieldPos(&sPrevMapSection, &cursorX, &cursorY, &inCave);
 			sStartMapSection = sPrevMapSection;
@@ -230,7 +247,7 @@ void CB2_InitSoar(void)
 		
 			VarSet(VAR_SAFARI_ZONE_SEED, (1+rtc.month)*rtc.year+(31*rtc.day));
 			SeedRng2(VarGet(VAR_SAFARI_ZONE_SEED));
-            for(i=0; i < 3; i++){
+			for(i=0; i < 3; i++){
 				sMirageSpots[i] = MAPSEC_MIRAGE_SPOT_PLAIN_A + (2*(Random2() % 9));
 				for(j=0; j < i; j++){
 					if(sMirageSpots[i]==sMirageSpots[j]){
@@ -298,6 +315,10 @@ static void LoadEonGraphics(void)
 	gSprites[sEonSpriteId].data[0] = 0;
 	gSprites[sEonSpriteId].data[1] = 0;
 	gSprites[sEonSpriteId].data[2] = 0;
+
+	sShadowSpriteId = CreateSprite(&sEonSpriteTemplate, DISPLAY_WIDTH / 2, DISPLAY_HEIGHT / 2, 0);
+
+	PrepSprite(&gSprites[sShadowSpriteId]);
 }
 
 static void CB2_LoadSoarGraphics(void)
@@ -346,6 +367,7 @@ static void CB2_LoadSoarGraphics(void)
 		windid = InitWindows(&sPopupWindowTemplate);
 		LoadMessageBoxGfx(0, 10, 15);
 		windid2 = CreateWindowFromRect(1, 14, 27, 4);
+		isNight = GetCurrentTimeOfDay();
 
 		gMain.state++;
 		break;
@@ -398,7 +420,7 @@ static void SoarVBlankCallback(void)
 	TransferPlttBuffer();
 }
 
-#define M7_D 128
+//define M7_D 128
 
 static void SoarHBlankCallback(void)
 {
@@ -414,36 +436,55 @@ static void SoarHBlankCallback(void)
 
 	if (currScanline > 159)  // We're in vblank. Nothing to do.
 		return;
-	if (currScanline < 32)  // draw gradient for sky
-	{
-		REG_DISPCNT &= ~DISPCNT_BG2_ON;
-		if(GetCurrentTimeOfDay() == 3)
+	
+	if (isNight == 3) {
+		if (currScanline < 32)  // draw gradient for sky
+		{
+			REG_DISPCNT &= ~DISPCNT_BG2_ON;
 			REG_BLDCNT = bldcntDarkFog;
-		else
-			REG_BLDCNT = bldcntFog;
-		REG_BLDY = currScanline / 2;
-		return;
-	}
+			REG_BLDY = currScanline / 2;
+			return;
+		}
 
-	if (currScanline == 32)
-		REG_DISPCNT |= DISPCNT_BG2_ON;
+		if (currScanline == 32)
+			REG_DISPCNT |= DISPCNT_BG2_ON;
 
-	if (currScanline <= 16 * 6)
-	{
-		if(GetCurrentTimeOfDay() == 3)
+		if (currScanline <= 16 * 6)
+		{
 			REG_BLDCNT = bldcntDarkFog;
+			REG_BLDY = 16 - (currScanline / 6);
+		}
 		else
-			REG_BLDCNT = bldcntFog;
-		REG_BLDY = 16 - (currScanline / 6);
+		{
+			REG_BLDCNT = 0;
+		}
 	}
-	else
-	{
-		REG_BLDCNT = 0;
+	else {
+		if (currScanline < 32)  // draw gradient for sky
+		{
+			REG_DISPCNT &= ~DISPCNT_BG2_ON;
+			REG_BLDCNT = bldcntFog;
+			REG_BLDY = currScanline / 2;
+			return;
+		}
+
+		if (currScanline == 32)
+			REG_DISPCNT |= DISPCNT_BG2_ON;
+
+		if (currScanline <= 16 * 6)
+		{
+			REG_BLDCNT = bldcntFog;
+			REG_BLDY = 16 - (currScanline / 6);
+		}
+		else
+		{
+			REG_BLDCNT = 0;
+		}
 	}
 
-	lam = sPlayerPosZ * ((1 << 16) / (currScanline - 32)) >> 12;  // .8*.16 /.12 = 20.12
-	lcf = lam * cosYaw >> 8;                     // .12*.8 /.8 = .12
-	lsf = lam * sinYaw >> 8;                     // .12*.8 /.8 = .12
+	lam = sPlayerPosZ * ((1 << 16) / (currScanline - 32)) >> 12;  // .8*.16 /.12 = 20.12  
+	lcf = lam * cosYaw >> 8;					 // .12*.8 /.8 = .12
+	lsf = lam * sinYaw >> 8;					 // .12*.8 /.8 = .12
 
 	REG_BG2PA = lcf >> 4;
 	REG_BG2PC = lsf >> 4;
@@ -452,14 +493,16 @@ static void SoarHBlankCallback(void)
 	// Note that the lxr shifts down first! 
 
 	// horizontal offset
-	lxr = 120 * (lcf >> 4);
+	lxr = 120 * (lcf >> 4);   //(lcf>>4)*M7_LEFT
 	lyr = (M7_D*lsf) >> 4;
-	REG_BG2X = sPlayerPosX - lxr + lyr;
+	REG_BG2X = sPlayerPosX - lxr + lyr;  //xc - lxr - (lsf*((ii-M7_TOP)*st - M7_D*ct)>>12);
 
 	// vertical offset
 	lxr = 120 * (lsf >> 4);
 	lyr = (M7_D*lcf) >> 4;
 	REG_BG2Y = sPlayerPosY - lxr - lyr;
+
+	PrepSprite(&gSprites[sShadowSpriteId]);
 }
 
 #define spTiltAngle data[0]
@@ -703,7 +746,7 @@ static void WarpCB2(void)
 	default:
 		SetWarpDestinationToHealLocation(sMapHealLocations[sPrevMapSection][2]);
 		if(sPrevMapSection==sMirageSpots[2])
-		    SetWarpDestinationToHealLocation(sMapHealLocations[sPrevMapSection+1][2]);
+			SetWarpDestinationToHealLocation(sMapHealLocations[sPrevMapSection+1][2]);
 
 	}
 
@@ -725,4 +768,109 @@ static void CB2_FadeOut(void)
 		SetHBlankCallback(NULL);
 		SetMainCallback2(CB2_ReturnToFieldWithOpenMenu);
 	}
+}*/
+
+
+static void PrepSprite(struct Sprite *sprite) {
+	//Sprite pos on map (roughly in the middle as low as possible on z-axis)
+	s32 vx = Q_8_7(0, 0);
+	s32 vy = MIN_Z;
+	s32 vz = Q_8_7(0, 0);
+
+	s32 vcx, vcy, vcz;  // camera x,y,z
+	s32 sf = gSineTable[sPlayerYaw];
+	s32 cf = gSineTable[sPlayerYaw + 64];
+	s32 sx, sy; // Object size
+	s32 scale; 
+	s32 xscr, yscr; //sprite position on screen
+
+	s32 rectr, rectb;
+	
+
+	// r=x-a			xc = CT·r		   xc = CT·(x-a)	  (u,v,w).(vx,vy,vz)
+	vx -= sPlayerPosX;  // x pos relative to player
+	vy -= sPlayerPosZ;
+	vz -= sPlayerPosY;
+
+	vcx = -(vx*cf + vz*sf)>>8; //cf*  + 0 + (-sf)*
+	vcy = -(vy * Q_8_7(1, 0))>>8;
+	vcz = -((vx*(-sf) + vz*cf)>>8);
+	sx = 64; //sprite width
+	sy = 64; //sprite height
+
+	do
+	{
+		// (2a) check distance
+		if(M7_NEAR*256 > vcz || vcz > M7_FAR*256)
+			break;
+
+		// (2b) check horizontal
+        rectr= vcx + sx*(256>>M7O_NORM);
+        if(M7_LEFT*vcz > rectr*M7_D || vcx*M7_D > M7_RIGHT*vcz)
+            break;
+
+		// (2c) check vertical
+        rectb= vcy + sy*(256>>M7O_NORM);
+        if(-M7_TOP*vcz > rectb*M7_D || vcy*M7_D > -M7_BOTTOM*vcz)
+            break;
+
+		// horizontal offset     st=0   ct=1
+	//lxr = 120 * (lcf >> 4);  //(lcf>>4)*M7_LEFT
+	//lyr = (M7_D*lsf) >> 4;
+	//REG_BG2X = sPlayerPosX - (120 * (lcf >> 4)) + ((M7_D*lsf) >> 4);  //bga->dx= xc + lxr - (lsf*zb>>12);  
+
+
+		scale = ((M7_D << 16) / vcz);
+		xscr = 0 - sx * 128;
+		xscr = (vcx - (xscr>>M7O_NORM))*scale>>16;
+		xscr += -sx - M7_LEFT;
+
+		yscr = 0 - sy * 128;
+		yscr = (vcy - (yscr>>M7O_NORM))*scale>>16;
+		yscr += -sy + M7_TOP;
+		sprite->x = xscr;
+		sprite->y = yscr;
+		
+		sprite->invisible = 0;
+
+		return;
+	} while(0);
+	
+	sprite->invisible = 1;
+
+	// u: [cf, 0, sf]
+	// v: [0, 1, 0]
+	// w: [-sf, 0, cf]
+
+	// u: [cf, 0, sf]
+	// v: [0, 1, 0]
+	// w: [-sf, 0, cf]
+}
+/*
+void update_sprites()
+{
+	int i;
+
+	M7_SPRITE *spr= m7_level.sprites;
+	for(i=0; i<SPR_COUNT; i++)
+	{
+		m7_prep_sprite(&m7_level, &spr[i]);
+
+		// Create sort key
+		if(BF_GET2(spr[i].obj.attr0, ATTR0_MODE) != ATTR0_HIDE)
+			sort_keys[i]= spr[i].pos2.z;
+		else
+			sort_keys[i]= INT_MAX;
+	}
+
+	// Sort the sprites
+	id_sort_shell(sort_keys, sort_ids, SPR_COUNT);
+
+	// Animate karts
+	//for(i=0; i<8; i++)
+	//	kart_animate(&spr[i], m7_level.camera);
+
+	// Update real OAM
+	//for(i=0; i<SPR_COUNT; i++)
+	//	obj_copy(&oam_mem[i], &spr[sort_ids[i]].obj, 1);
 }*/
