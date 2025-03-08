@@ -147,7 +147,7 @@ int maWait(void){
 
     return (maError << 16) | maErrorProtocol;
 }
-
+/*
 const char *ma_errmesg(int err){
 
     int eh, el;
@@ -226,7 +226,7 @@ const char *ma_errmesg(int err){
     }
     else
 	return mesgs[21];
-}
+}*/
 	   
 
 //Example function to show how to download a Pokemon

@@ -245,4 +245,7 @@ int maSendData(const u8 *pSendData, u8 sendSize, u8 *pResult);
 int maReceiveData(u8 *pRecvData, u8 *pRecvSize);
 int maWait(void);
 
+int encrypt_data(u32 pid, char *data, int datasize);
+char base64_encode(u32 checksum, char *data, size_t input_length);
+
 #endif // GUARD_GBA_MOBILE_ADAPTER_H

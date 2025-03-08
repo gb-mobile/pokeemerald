@@ -2031,8 +2031,8 @@ void EnterPokeStorage(u8 boxOption)
     if (sStorage == NULL)
     {
         if(boxOption == OPTION_SELECT_MON){
-            if(VarGet(VAR_UNUSED_0x40FF)==1)
-                SetMainCallback2(CB2_ReturnToGlobalTradeStation);
+            if(VarGet(VAR_UNUSED_0x40FF)!=0)
+                SetMainCallback2(CB2_InitGlobalTradeStation);
             else
                 SetMainCallback2(CB2_ReturnToFieldContinueScript);
         }
@@ -2065,8 +2065,8 @@ static void CB2_ReturnToPokeStorage(void)
     if (sStorage == NULL)
     {
         if(sStorage->boxOption == OPTION_SELECT_MON)
-            if(VarGet(VAR_UNUSED_0x40FF)==1)
-                SetMainCallback2(CB2_ReturnToGlobalTradeStation);
+            if(VarGet(VAR_UNUSED_0x40FF)!=0)
+                SetMainCallback2(CB2_InitGlobalTradeStation);
             else
                 SetMainCallback2(CB2_ReturnToFieldContinueScript);
         else
@@ -3817,8 +3817,8 @@ static void Task_ChangeScreen(u8 taskId)
     case SCREEN_CHANGE_EXIT_BOX:
     default:
         if(sStorage->boxOption == OPTION_SELECT_MON){
-            if(VarGet(VAR_UNUSED_0x40FF)==1)
-                SetMainCallback2(CB2_ReturnToGlobalTradeStation);
+            if(VarGet(VAR_UNUSED_0x40FF)!=0)
+                SetMainCallback2(CB2_InitGlobalTradeStation);
             else
                 SetMainCallback2(CB2_ReturnToFieldContinueScript);
             VarSet(gSpecialVar_0x8004,0xFF);
