@@ -2993,6 +2993,7 @@ static void CB2_InitInGameTrade(void)
         gLinkPlayers[0].language = GAME_LANGUAGE;
         gLinkPlayers[1].language = GetMonData(&gEnemyParty[0], MON_DATA_LANGUAGE);
         sTradeAnim = AllocZeroed(sizeof(*sTradeAnim));
+        sTradeAnim->filler_F9 = 1;
         AllocateMonSpritesGfx();
         ResetTasks();
         ResetSpriteData();
@@ -3343,7 +3344,10 @@ static bool8 DoTradeAnim(void)
     if (sTradeAnim->isCableTrade)
         return DoTradeAnim_Cable();
     else{
-        return AnimateExchangeSequenceWireless();
+        if(sTradeAnim->filler_F9==1)
+            return DoTradeAnim_Wireless();
+        else
+            return AnimateExchangeSequenceWireless();
     }
         //return AnimateDepositSequenceWireless();
         //return AnimateTradeSequenceWireless();
@@ -3897,7 +3901,7 @@ static bool8 DoTradeAnim_Cable(void)
 #define tCounter           data[1]
 #define tSignalComingBack  data[2]
 
-static bool8 UNUSED DoTradeAnim_Wireless(void)
+static bool8 DoTradeAnim_Wireless(void)
 {
     u16 evoTarget;
 
@@ -4402,7 +4406,7 @@ static bool8 AnimateExchangeSequenceWireless(void)
         gSprites[sTradeAnim->monSpriteIds[TRADE_PLAYER]].x2 = -180;
         gSprites[sTradeAnim->monSpriteIds[TRADE_PLAYER]].y2 = gSpeciesInfo[sTradeAnim->monSpecies[TRADE_PLAYER]].frontPicYOffset;
         VarSet(VAR_DEPOSIT_SPECIES,sTradeAnim->monSpecies[TRADE_PLAYER]);
-        if(sGTSPokedexView->currentPage==1){
+        if(sTradeAnim->filler_F9==0 && sGTSPokedexView->currentPage==1){
             sTradeAnim->state=STATE_CREATE_LINK_MON_ARRIVING;
         }
         else
@@ -4543,7 +4547,7 @@ static bool8 AnimateExchangeSequenceWireless(void)
         gSprites[sTradeAnim->connectionSpriteId2].y -= 2;
         if (gSprites[sTradeAnim->connectionSpriteId1].y < -8)
         {
-            if(sGTSPokedexView->currentPage==2){
+            if(sTradeAnim->filler_F9==0 && sGTSPokedexView->currentPage==2){
                 sTradeAnim->state=STATE_FADE_OUT_END;
             }
             else
