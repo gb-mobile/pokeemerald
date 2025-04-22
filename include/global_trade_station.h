@@ -23,28 +23,28 @@ struct PokedexListItem
 
 struct GTSResult
 {
-    u32 checksum;
-    u32 pid;
-    struct BoxPokemon boxmon;
-    u16 dexNum;
-    u8 gender;
-    u8 level;
-    u16 natDexRequest;
-    u8 genderRequest;
-    u8 minLevel;
-    u8 maxLevel;
-    u8 trainerGender;
-    u16 trainerID;
-    u16 secretID;
-    char OTName[7];
-    u8 country;
-    u8 region;
-    u8 trainerClass;
-    bool8 isExchanged;
-    u16 gameVersion;
-    u16 romHackID;
-    u16 romHackVersion;
-    u8 language;
+    u32 checksum;               //0-3
+    u32 pid;                    //4-7
+    struct BoxPokemon boxmon;   //8-87
+    u16 dexNum;                 //88-89
+    u8 gender;                  //90
+    u8 level;                   //91
+    u16 natDexRequest;          //92-93
+    u8 genderRequest;           //94
+    u8 minLevel;                //95
+    u8 maxLevel;                //96
+    u8 trainerGender;           //97
+    u16 trainerID;              //98-99
+    u16 secretID;               //100-101
+    char OTName[7];             //102-108
+    u8 country;                 //109
+    u8 region;                  //110
+    u8 trainerClass;            //111
+    bool8 isExchanged;          //112
+    u16 gameVersion;            //113-114 +5
+    u16 romHackID;              //115-116
+    u16 romHackVersion;         //117-118
+    u8 language;                //119
 };
 
 struct GTSPokedexView
@@ -70,6 +70,7 @@ struct GTSPokedexView
     u16 scrollSpeed;
     u8 numResults;
     u8 currentPage; //keep
+    u8 token[32];
     struct GTSResult searchResult[7];
 };
 

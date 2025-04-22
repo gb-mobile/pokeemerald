@@ -5966,6 +5966,14 @@ const u32 *GetMonFrontSpritePal(struct Pokemon *mon)
     return GetMonSpritePalFromSpeciesAndPersonality(species, isShiny, personality);
 }
 
+const u32 *GetBoxMonFrontSpritePal(struct BoxPokemon *mon)
+{
+    u16 species = GetBoxMonData(mon, MON_DATA_SPECIES_OR_EGG, NULL);
+    bool32 isShiny = GetBoxMonData(mon, MON_DATA_IS_SHINY, NULL);
+    u32 personality = GetBoxMonData(mon, MON_DATA_PERSONALITY, NULL);
+    return GetMonSpritePalFromSpeciesAndPersonality(species, isShiny, personality);
+}
+
 const u32 *GetMonSpritePalFromSpeciesAndPersonality(u16 species, bool32 isShiny, u32 personality)
 {
     return GetMonSpritePalFromSpecies(species, isShiny, IsPersonalityFemale(species, personality));

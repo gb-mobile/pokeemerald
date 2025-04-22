@@ -1039,7 +1039,7 @@ static bool32 UNUSED PrintServerResultMessage(u8 * state, u16 * timer, bool8 sou
         return PrintInternetOptionsMenuMessage(state, str);
 }
 
-char base64_encode(u32 checksum, char *data, size_t input_length) {
+void base64_encode(u32 checksum, char *data, size_t input_length, char *encoded_data) {
  
     int output_length = 4 * ((input_length + 2) / 3);
     int mod_table[] = {0, 2, 1};
@@ -1052,7 +1052,7 @@ char base64_encode(u32 checksum, char *data, size_t input_length) {
                                 'w', 'x', 'y', 'z', '0', '1', '2', '3',
                                 '4', '5', '6', '7', '8', '9', '-', '_'};
 
-    char input_data[output_length];
+    char input_data[output_length+1];
 
     input_data[0] = checksum >> 24 & 0xFF;
     input_data[1] = checksum >> 16 & 0xFF;
@@ -1062,9 +1062,12 @@ char base64_encode(u32 checksum, char *data, size_t input_length) {
     for (int i = 4; i < input_length; i++) {
         input_data[i] = data[i-4];
     }
- 
-    char encoded_data[output_length];
-    if (encoded_data == NULL) return NULL;
+
+    //char encoded_data[output_length+1];
+    //if (encoded_data == NULL) return NULL;
+    DebugPrintf("Yello");
+    DebugPrintf(input_data);
+    DebugPrintf(encoded_data);
  
     for (int i = 0, j = 0; i < input_length;) {
  
@@ -1079,11 +1082,15 @@ char base64_encode(u32 checksum, char *data, size_t input_length) {
         encoded_data[j++] = encoding_table[(triple >> 1 * 6) & 0x3F];
         encoded_data[j++] = encoding_table[(triple >> 0 * 6) & 0x3F];
     }
- 
+    DebugPrintf("Uploading 3.3111");
     for (int i = 0; i < mod_table[input_length % 3]; i++)
         encoded_data[output_length - 1 - i] = '=';
- 
-    return *encoded_data;
+    DebugPrintf("Uploading 3.3111111");
+    encoded_data[output_length]='\0';
+    DebugPrintf("Uploading 3.311111111111");
+    DebugPrintf(encoded_data);
+    DebugPrintf("Uploading 3.yyyyy");
+    //return *encoded_data;
 }
 
 int encrypt_data(u32 pid, char *data, int datasize){
@@ -1094,7 +1101,7 @@ int encrypt_data(u32 pid, char *data, int datasize){
     checksum = checksum + (pid >> 8 & 0xFF);
     checksum = checksum + (pid & 0xFF);
 
-    for(i=0; i<datasize; i++){
+    for(i=4; i<datasize; i++){
         checksum = checksum + data[i];
     }
     checksum = 0x4a3b2c1d ^ checksum;
@@ -1102,12 +1109,17 @@ int encrypt_data(u32 pid, char *data, int datasize){
     int GRNG = checksum | (checksum << 16);
     u8 keystream = (GRNG >> 16) & 0xFF;
     i=0;
+    
     while(i<datasize){
+        DebugPrintf("key %u",(u32)keystream);
+        DebugPrintf("%u",(u32)data[i]);
         data[i]=data[i] ^ keystream;
+        DebugPrintf("%u",(u32)data[i]);
         GRNG = (GRNG * 0x45 + 0x1111) & 0x7FFFFFFF;
         keystream = (GRNG >> 16) & 0xFF;
+        i++;
     }
-
+    
     return checksum;
 }
 
@@ -1595,7 +1607,7 @@ static void Task_InternetOptions(u8 taskId)
 
         checksum=encrypt_data(pid, (char *)userprofile, sizeof(userprofile));
 
-        *encoded_data=base64_encode(checksum, (char *)userprofile, sizeof(userprofile)+4);
+        //*encoded_data=base64_encode(checksum, (char *)userprofile, sizeof(userprofile)+4);
         concat_str(pURL,encoded_data);
 
         recvBufSize=8;
@@ -1826,7 +1838,7 @@ static void Task_InternetOptions(u8 taskId)
         checksum=encrypt_data(pid, (char *)userprofile, sizeof(userprofile));
 
         concat_str(pURL,"&data=");
-        *encoded_data=base64_encode(checksum, (char *)userprofile, sizeof(userprofile)+4);
+        //*encoded_data=base64_encode(checksum, (char *)userprofile, sizeof(userprofile)+4);
         concat_str(pURL,encoded_data);
 
         recvBufSize=8;

@@ -2046,12 +2046,12 @@ void EnterPokeStorage(u8 boxOption)
         sMovingItemId = ITEM_NONE;
         sStorage->state = 0;
         sStorage->infostate = 0;
-        if(boxOption == OPTION_SELECT_MON){
-            sStorage->searchMon = SPECIES_TORCHIC; // Mon to search for
-            sStorage->searchMinLevel = 0;
-            sStorage->searchMaxLevel = 100;
-            sStorage->searchGender = MON_MALE;
-        }
+        //if(boxOption == OPTION_SELECT_MON){
+        //    sStorage->searchMon = SPECIES_TORCHIC; // Mon to search for
+        //    sStorage->searchMinLevel = 0;
+        //    sStorage->searchMaxLevel = 100;
+        //    sStorage->searchGender = MON_MALE;
+        //}
         sStorage->taskId = CreateTask(Task_InitPokeStorage, 3);
         sLastUsedBox = StorageGetCurrentBox();
         SetMainCallback2(CB2_PokeStorage);
@@ -2120,7 +2120,7 @@ static void InitStartingPosData(void)
 
 static void SetMonIconTransparency(void)
 {
-    if (sStorage->boxOption == OPTION_MOVE_ITEMS || sStorage->boxOption == OPTION_SELECT_MON)
+    if (sStorage->boxOption == OPTION_MOVE_ITEMS)// || sStorage->boxOption == OPTION_SELECT_MON)
     {
         SetGpuReg(REG_OFFSET_BLDCNT, BLDCNT_TGT2_ALL);
         SetGpuReg(REG_OFFSET_BLDALPHA, BLDALPHA_BLEND(7, 11));
@@ -4610,8 +4610,8 @@ static void InitBoxMonSprites(u8 boxId)
                 species = monspecies;
             if (gender == 1)
                 gender = GetGenderFromSpeciesAndPersonality(species, GetBoxMonDataAt(boxId, boxPosition, MON_DATA_PERSONALITY));
-            if (monspecies != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(monspecies, GetBoxMonDataAt(boxId, boxPosition, MON_DATA_PERSONALITY)) != gender)
-                sStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
+            //if (monspecies != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(monspecies, GetBoxMonDataAt(boxId, boxPosition, MON_DATA_PERSONALITY)) != gender)
+            //    sStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
         }
     }
 }
@@ -4767,8 +4767,8 @@ static u8 CreateBoxMonIconsInColumn(u8 column, u16 distance, s16 speed)
                     if (gender == 1)
                         gender = GetGenderFromSpeciesAndPersonality(sStorage->boxSpecies[boxPosition], sStorage->boxPersonalities[boxPosition]);
                     
-                    if (sStorage->boxSpecies[boxPosition] != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(sStorage->boxSpecies[boxPosition], sStorage->boxPersonalities[boxPosition]) != gender)
-                        sStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
+                    //if (sStorage->boxSpecies[boxPosition] != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(sStorage->boxSpecies[boxPosition], sStorage->boxPersonalities[boxPosition]) != gender)
+                    //    sStorage->boxMonsSprites[boxPosition]->oam.objMode = ST_OAM_OBJ_BLEND;
                     iconsCreated++;
                 }
             }
@@ -4964,8 +4964,8 @@ static void CreatePartyMonsSprites(bool8 visible)
         for (i = 0; i < PARTY_SIZE; i++)
         {
             monlevel = GetMonData(&gPlayerParty[i], MON_DATA_LEVEL);
-            if (sStorage->partySprites[i] != NULL && (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG), GetMonData(&gPlayerParty[i], MON_DATA_PERSONALITY)) != gender))
-                sStorage->partySprites[i]->oam.objMode = ST_OAM_OBJ_BLEND;
+            //if (sStorage->partySprites[i] != NULL && (GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG) != species || monlevel < sStorage->searchMinLevel || monlevel > sStorage->searchMaxLevel || GetGenderFromSpeciesAndPersonality(GetMonData(&gPlayerParty[i], MON_DATA_SPECIES_OR_EGG), GetMonData(&gPlayerParty[i], MON_DATA_PERSONALITY)) != gender))
+                //sStorage->partySprites[i]->oam.objMode = ST_OAM_OBJ_BLEND;
         }
     }
 }

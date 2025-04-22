@@ -1998,6 +1998,8 @@ const u8 gText_Sync[] = _("Sync Data");
 const u8 gText_GameSync[] = _("Game Sync");
 const u8 gText_UploadSecretBase[] = _("Upload Secret Base");
 const u8 gText_UploadRecordedBattle[] = _("Upload Recorded Battle");
+const u8 gText_GTS[] = _("GTS");
+const u8 gText_CheckingGTSStatus[] = _("Checking GTS's status...");
 ALIGNED(4) const u8 gText_InternetOptions[] = _("Internet Options");
 ALIGNED(4) const u8 gText_CreateFriendCode[] = _("No Friend Code found.\nGo online and create one?");
 ALIGNED(4) const u8 gText_FC[] = _("FC:");
@@ -2028,3 +2030,4 @@ const u8 gText_Fertilize[] = _("Fertilize");
 const u8 gText_PlantBerry[] = _("Plant Berry");
 const u8 gText_AM[] = _("AM");
 const u8 gText_PM[] = _("PM");
+

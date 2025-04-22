@@ -538,6 +538,7 @@ gSpecials::
 	def_special ScriptMenu_CreatePWTMultichoice
 	def_special GetPWTSelection
 	def_special Special_InitGTS
+	def_special maConnected
 	def_special TrySpecialOverworldEvo
 	def_special RtcGetDayOfWeek
 	def_special GetNumberSprayStrength

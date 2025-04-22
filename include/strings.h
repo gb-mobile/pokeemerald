@@ -1476,10 +1476,12 @@ extern const u8 gText_TrainerHill4F[];
 // Cable Club multichoice text
 extern const u8 CableClub_Text_TradeUsingLinkCable[];
 extern const u8 CableClub_Text_BattleUsingLinkCable[];
+extern const u8 CableClub_Text_UseGTS[];
 extern const u8 CableClub_Text_RecordCornerUsingLinkCable[];
 extern const u8 CableClub_Text_CancelSelectedItem[];
 extern const u8 CableClub_Text_YouMayTradeHere[];
 extern const u8 CableClub_Text_YouMayBattleHere[];
+extern const u8 CableClub_Text_YouMayTradeOnlineHere[];
 extern const u8 CableClub_Text_CanMixRecords[];
 extern const u8 CableClub_Text_CanMakeBerryPowder[];
 
@@ -3421,6 +3423,8 @@ extern const u8 gText_Sync[];
 extern const u8 gText_GameSync[];
 extern const u8 gText_UploadSecretBase[];
 extern const u8 gText_UploadRecordedBattle[];
+extern const u8 gText_GTS[];
+extern const u8 gText_CheckingGTSStatus[];
 extern const u8 gText_InternetOptions[];
 extern const u8 gText_CreateFriendCode[];
 extern const u8 gText_FC[];
