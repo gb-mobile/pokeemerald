@@ -100,6 +100,10 @@ enum UtilDebugMenu
     DEBUG_UTIL_MENU_ITEM_EXPANSION_VER,
     DEBUG_UTIL_MENU_ITEM_BERRY_FUNCTIONS,
     DEBUG_UTIL_MENU_ITEM_EWRAM_COUNTERS,
+    DEBUG_UTIL_MENU_ITEM_EXPORT_JSON,
+    DEBUG_UTIL_MENU_ITEM_EXPORT_MOVES,
+    DEBUG_UTIL_MENU_ITEM_EXPORT_ITEMS,
+    DEBUG_UTIL_MENU_ITEM_EXPORT_TYPES,
 };
 
 enum GivePCBagDebugMenu
@@ -376,6 +380,10 @@ static void DebugAction_Util_CheatStart(u8 taskId);
 static void DebugAction_Util_ExpansionVersion(u8 taskId);
 static void DebugAction_Util_BerryFunctions(u8 taskId);
 static void DebugAction_Util_CheckEWRAMCounters(u8 taskId);
+static void DebugAction_Util_Export_JSON(u8 taskId);
+static void DebugAction_Util_Export_Moves(u8 taskId);
+static void DebugAction_Util_Export_Items(u8 taskId);
+static void DebugAction_Util_Export_Types(u8 taskId);
 
 static void DebugAction_OpenPCBagFillMenu(u8 taskId);
 static void DebugAction_PCBag_Fill_PCBoxes_Fast(u8 taskId);
@@ -536,6 +544,10 @@ static const u8 sDebugText_Util_CheatStart[] =               _("Cheat start");
 static const u8 sDebugText_Util_ExpansionVersion[] =         _("Expansion Version");
 static const u8 sDebugText_Util_BerryFunctions[] =           _("Berry Functions…{CLEAR_TO 110}{RIGHT_ARROW}");
 static const u8 sDebugText_Util_EWRAMCounters[] =            _("EWRAM Counters…{CLEAR_TO 110}{RIGHT_ARROW}");
+static const u8 sDebugText_Util_ExportJSON[] =               _("Export Pokemon JSON");
+static const u8 sDebugText_Util_ExportMoves[] =              _("Export Moves JSON");
+static const u8 sDebugText_Util_ExportItems[] =              _("Export Items JSON");
+static const u8 sDebugText_Util_ExportTypes[] =              _("Export Types JSON");
 // PC/Bag Menu
 static const u8 sDebugText_PCBag_Fill[] =                    _("Fill…{CLEAR_TO 110}{RIGHT_ARROW}");
 static const u8 sDebugText_PCBag_Fill_Pc_Fast[] =            _("Fill PC Boxes Fast");
@@ -725,6 +737,10 @@ static const struct ListMenuItem sDebugMenu_Items_Utilities[] =
     [DEBUG_UTIL_MENU_ITEM_EXPANSION_VER]   = {sDebugText_Util_ExpansionVersion, DEBUG_UTIL_MENU_ITEM_EXPANSION_VER},
     [DEBUG_UTIL_MENU_ITEM_BERRY_FUNCTIONS] = {sDebugText_Util_BerryFunctions,   DEBUG_UTIL_MENU_ITEM_BERRY_FUNCTIONS},
     [DEBUG_UTIL_MENU_ITEM_EWRAM_COUNTERS]  = {sDebugText_Util_EWRAMCounters,    DEBUG_UTIL_MENU_ITEM_EWRAM_COUNTERS},
+    [DEBUG_UTIL_MENU_ITEM_EXPORT_JSON]     = {sDebugText_Util_ExportJSON,       DEBUG_UTIL_MENU_ITEM_EXPORT_JSON},
+    [DEBUG_UTIL_MENU_ITEM_EXPORT_MOVES]    = {sDebugText_Util_ExportMoves,      DEBUG_UTIL_MENU_ITEM_EXPORT_MOVES},
+    [DEBUG_UTIL_MENU_ITEM_EXPORT_ITEMS]    = {sDebugText_Util_ExportItems,      DEBUG_UTIL_MENU_ITEM_EXPORT_ITEMS},
+    [DEBUG_UTIL_MENU_ITEM_EXPORT_TYPES]    = {sDebugText_Util_ExportTypes,      DEBUG_UTIL_MENU_ITEM_EXPORT_TYPES}
 };
 
 static const struct ListMenuItem sDebugMenu_Items_PCBag[] =
@@ -895,6 +911,10 @@ static void (*const sDebugMenu_Actions_Utilities[])(u8) =
     [DEBUG_UTIL_MENU_ITEM_EXPANSION_VER]   = DebugAction_Util_ExpansionVersion,
     [DEBUG_UTIL_MENU_ITEM_BERRY_FUNCTIONS] = DebugAction_Util_BerryFunctions,
     [DEBUG_UTIL_MENU_ITEM_EWRAM_COUNTERS]  = DebugAction_Util_CheckEWRAMCounters,
+    [DEBUG_UTIL_MENU_ITEM_EXPORT_JSON]     = DebugAction_Util_Export_JSON,
+    [DEBUG_UTIL_MENU_ITEM_EXPORT_MOVES]    = DebugAction_Util_Export_Moves,
+    [DEBUG_UTIL_MENU_ITEM_EXPORT_ITEMS]    = DebugAction_Util_Export_Items,
+    [DEBUG_UTIL_MENU_ITEM_EXPORT_TYPES]    = DebugAction_Util_Export_Types,
 };
 
 static void (*const sDebugMenu_Actions_PCBag[])(u8) =
@@ -5129,5 +5149,352 @@ static void DebugAction_Util_CheckEWRAMCounters(u8 taskId)
 {
     Debug_DestroyMenu_Full_Script(taskId, Debug_EventScript_EWRAMCounters);
 }
+
+static void DebugAction_Util_Export_JSON(u8 taskId)
+{
+    u32 endVal = NUM_SPECIES;
+    for (u32 i = 1; i < endVal; i++)
+    {
+        const struct SpeciesInfo *currSpecies = &gSpeciesInfo[i];
+
+        //  Detect if species has data
+        if (currSpecies->baseHP == 0)
+            continue;
+
+        //  Start printing species data
+        DebugPrintf("{");
+        //  Print species name
+        DebugPrintf("    \"speciesName\": \"%S\",", currSpecies->speciesName);
+
+        //Print Pokedex Entry
+        DebugPrintf("    \"description\": \"%S\",", currSpecies->description);
+
+        //Print Height
+        DebugPrintf("    \"height\": \"%u\",", currSpecies->height);
+
+        //Print Weight
+        DebugPrintf("    \"weight\": \"%u\",", currSpecies->weight);
+
+        //  Print types
+        if (currSpecies->types[0] != currSpecies->types[1])
+            DebugPrintf("    \"types\": [\"%S\", \"%S\"],", gTypesInfo[currSpecies->types[0]].name, gTypesInfo[currSpecies->types[1]].name);
+        else
+            DebugPrintf("    \"types\": [\"%S\"],", gTypesInfo[currSpecies->types[0]].name);
+
+        //  Print stats
+        DebugPrintf("    \"stats\": {");
+        DebugPrintf("        \"hp\": %u,", currSpecies->baseHP);
+        DebugPrintf("        \"attack\": %u,", currSpecies->baseAttack);
+        DebugPrintf("        \"defense\": %u,", currSpecies->baseDefense);
+        DebugPrintf("        \"spAttack\": %u,", currSpecies->baseSpAttack);
+        DebugPrintf("        \"spDefense\": %u,", currSpecies->baseSpDefense);
+        DebugPrintf("        \"speed\": %u,", currSpecies->baseHP);
+        DebugPrintf("    },");
+
+        //  Print abilities
+        if (currSpecies->abilities[0] != currSpecies->abilities[1] && currSpecies->abilities[1] != ABILITY_NONE)
+            DebugPrintf("    \"Abilities\": [\"%S\", \"%S\"],", gAbilitiesInfo[currSpecies->abilities[0]].name, gAbilitiesInfo[currSpecies->abilities[1]].name);
+        else
+            DebugPrintf("    \"Abilities\": [\"%S\"],", gAbilitiesInfo[currSpecies->abilities[0]].name);
+        if (currSpecies->abilities[2] != ABILITY_NONE)
+            DebugPrintf("    \"Hidden Ability\": \"%S\",", gAbilitiesInfo[currSpecies->abilities[2]].name);
+
+        //  Print moves
+        //  Level up moves
+        DebugPrintf("    \"levelUpMoves\": [");
+        bool32 shouldContinue = TRUE;
+        u32 moveIndex = 0;
+        const struct LevelUpMove *levelUpLearnset = currSpecies->levelUpLearnset;
+        while (shouldContinue)
+        {
+            DebugPrintf("        {");
+            DebugPrintf("            \"level\": %u,", levelUpLearnset[moveIndex].level);
+            DebugPrintf("            \"move\": \"%S\"", gMovesInfo[levelUpLearnset[moveIndex].move].name);
+            moveIndex++;
+            if (levelUpLearnset[moveIndex].move == LEVEL_UP_MOVE_END)
+            {
+                shouldContinue = FALSE;
+                DebugPrintf("        }");
+            }
+            else
+            {
+                DebugPrintf("        },");
+            }
+        }
+        DebugPrintf("    ],");
+
+        //  Teachable moves
+        shouldContinue = TRUE;
+        moveIndex = 0;
+        const u16 *teachableLearnset = currSpecies->teachableLearnset;
+        if (teachableLearnset[moveIndex] != MOVE_UNAVAILABLE)
+        {
+            DebugPrintf("    \"teachableLearnset\": [");
+            while (shouldContinue)
+            {
+                if (teachableLearnset[moveIndex + 1] != MOVE_UNAVAILABLE)
+                {
+                    DebugPrintf("        \"%S\",", gMovesInfo[teachableLearnset[moveIndex]].name);
+                }
+                else
+                {
+                    DebugPrintf("        \"%S\"", gMovesInfo[teachableLearnset[moveIndex]].name);
+                    shouldContinue = FALSE;
+                }
+                moveIndex++;
+            }
+            DebugPrintf("    ],");
+        }
+
+        //  Egg moves
+        shouldContinue = TRUE;
+        moveIndex = 0;
+        const u16 *eggMoves = GetSpeciesEggMoves(i);
+        if (eggMoves[moveIndex] != MOVE_UNAVAILABLE)
+        {
+            DebugPrintf("    \"eggMoves\": [");
+            while (shouldContinue)
+            {
+                if (eggMoves[moveIndex + 1] != MOVE_UNAVAILABLE)
+                {
+                    DebugPrintf("        \"%S\",", gMovesInfo[eggMoves[moveIndex]].name);
+                }
+                else
+                {
+                    DebugPrintf("        \"%S\"", gMovesInfo[eggMoves[moveIndex]].name);
+                    shouldContinue = FALSE;
+                }
+                moveIndex++;
+            }
+            DebugPrintf("    ],");
+        }
+
+        //  Various data
+        DebugPrintf("    \"catchRate\": %u,", currSpecies->catchRate);
+        DebugPrintf("    \"expYield\": %u,", currSpecies->expYield);
+        DebugPrintf("    \"eggCycles\": %u,", currSpecies->eggCycles);
+        DebugPrintf("    \"monCategory\": \"%S\",", currSpecies->categoryName);
+        DebugPrintf("    \"natDexNum\": %u,", currSpecies->natDexNum);
+        DebugPrintf("    \"internalId\": %u,", i);
+
+         //Print Evolutions
+        //DebugPrintf("    \"evolutions\": [%u,", currSpecies->evolutions[0].targetSpecies);
+        //for(u32 j = 1; j < currSpecies->evolutions; j++)
+        //{
+        //    DebugPrintf("                   %u,", currSpecies->evolutions[j].targetSpecies);
+        //}
+        //DebugPrintf("    ],");
+
+        //  Print forms
+        if (currSpecies->isMegaEvolution)
+            DebugPrintf("    \"form\": \"mega\",");
+        else if (currSpecies->isGigantamax)
+            DebugPrintf("    \"form\": \"gigantamax\",");
+
+        DebugPrintf("}");
+    }
+
+    Debug_DestroyMenu_Full(taskId);
+}
+
+static void DebugAction_Util_Export_Moves(u8 taskId)
+{
+    u32 endVal = MOVES_COUNT_ALL;
+    for (u32 i = 1; i < endVal; i++)
+    {
+        const struct MoveInfo *currMove = &gMovesInfo[i];
+
+        //  Detect if move has data
+        if (currMove->pp < 0)
+            continue;
+
+        //  Start printing move data
+        DebugPrintf("{");
+        //  Print move name
+        DebugPrintf("    \"moveName\": \"%S\",", currMove->name);
+
+        //Print move description
+        DebugPrintf("    \"description\": \"%S\",", currMove->description);
+
+        //Print move type
+        DebugPrintf("    \"type\": \"%S\",", gTypesInfo[currMove->type].name);
+
+        //Print Move Category
+        switch(currMove->category)
+        {
+            case DAMAGE_CATEGORY_PHYSICAL:
+                DebugPrintf("    \"category\": \"Physical\"");
+                break;
+            case DAMAGE_CATEGORY_SPECIAL:
+                DebugPrintf("    \"category\": \"Special\"");
+                break;
+            case DAMAGE_CATEGORY_STATUS:
+                DebugPrintf("    \"category\": \"Status\"");
+                break;
+        }
+        
+        //Print Move Power
+        DebugPrintf("    \"power\": %u,", currMove->power);
+
+        //Print Move Accuracy
+        DebugPrintf("    \"accuracy\": %u,", currMove->accuracy);
+
+        //Print Move Power
+        DebugPrintf("    \"pp\": %u,", currMove->pp);
+
+        //Print Move Priority
+        DebugPrintf("    \"priority\": %d,", currMove->priority);
+
+        //Print Move Contact
+        DebugPrintf("    \"makesContact\": %u,", currMove->makesContact);
+
+        //Print Move Contest Category
+        DebugPrintf("    \"contestCategory\": \"%S\",", gContestMoveTypeTextPointers[currMove->contestCategory]);
+
+        //Print Move Contest Effect
+        DebugPrintf("    \"contestEffect\": \"%S\",", gContestEffectDescriptionPointers[currMove->contestEffect]);
+
+        //Print Move Contest Appeal
+        DebugPrintf("    \"appeal\": %u,", gContestEffects[currMove->contestEffect].appeal);
+
+        //Print Move Contest Jam
+        DebugPrintf("    \"jam\": %u,", gContestEffects[currMove->contestEffect].jam);
+
+        DebugPrintf("}");
+    }
+
+    Debug_DestroyMenu_Full(taskId);
+}
+
+static void DebugAction_Util_Export_Items(u8 taskId)
+{
+    u32 endVal = ITEMS_COUNT;
+    for (u32 i = 1; i < endVal; i++)
+    {
+        const struct Item *currItems = &gItemsInfo[i];
+
+        //  Detect if species has data
+        if (*currItems->name == '-')
+            continue;
+
+        //  Start printing species data
+        DebugPrintf("{");
+        //  Print item name
+        DebugPrintf("    \"itemName\": \"%S\",", currItems->name);
+
+        //  Print Description
+        DebugPrintf("    \"description\": \"%S\",", currItems->description);
+
+        //  Print Price
+        DebugPrintf("    \"price\": %u,", currItems->price);
+
+        //  Print Fling
+        DebugPrintf("    \"flingPower\": %u,", currItems->flingPower);
+
+        //  Print Locations
+        DebugPrintf("    \"Locations\": {");
+        DebugPrintf("        \"Marts\": %S,", currItems->flingPower);
+
+        //  Print Fling
+        DebugPrintf("    \"flingPower\": %u,", currItems->flingPower);
+       
+        DebugPrintf("}");
+    }
+
+    Debug_DestroyMenu_Full(taskId);
+}
+
+static void DebugAction_Util_Export_Types(u8 taskId)
+{
+    u32 endVal = NUMBER_OF_MON_TYPES;
+    for (u32 i = 1; i < endVal; i++)
+    {
+        const struct TypeInfo *currTypes = &gTypesInfo[i];
+
+        //  Detect if species has data
+        if (*currTypes->name == '0')
+            continue;
+
+        //  Start printing species data
+        DebugPrintf("{");
+        //  Print item name
+        DebugPrintf("    \"typeName\": \"%S\",", currTypes->name);
+
+        //  Print Double Damage
+        DebugPrintf("    \"doubleDamage\": [");
+        for(u32 j = 0; j < NUMBER_OF_MON_TYPES; j++){
+            if(gTypeEffectivenessTable[i][j] == 2)
+                DebugPrintf("                        \"%S\",", gTypesInfo[j].name);  
+        }
+        DebugPrintf("                     ]");
+
+        //  Print Half Damage
+        DebugPrintf("    \"halfDamage\": [");
+        for(u32 j = 0; j < NUMBER_OF_MON_TYPES; j++){
+            if(gTypeEffectivenessTable[i][j] == 0.5)
+                DebugPrintf("                        \"%S\",", gTypesInfo[j].name);  
+        }
+        DebugPrintf("                     ]");
+
+        //  Print Can't Damage
+        DebugPrintf("    \"cantDamage\": [");
+        for(u32 j = 0; j < NUMBER_OF_MON_TYPES; j++){
+            if(gTypeEffectivenessTable[i][j] == 0)
+                DebugPrintf("                        \"%S\",", gTypesInfo[j].name);  
+        }
+        DebugPrintf("                     ]");
+
+        DebugPrintf("}");
+    }
+
+    Debug_DestroyMenu_Full(taskId);
+}
+
+/*
+static void DebugAction_Util_Export_MapData(u8 taskId)
+{
+    u32 endVal = NUMBER_OF_MON_TYPES;
+    for (u32 i = 1; i < endVal; i++)
+    {
+        const struct TypesInfo *currMap = &gWildMonHeaders[i];gWildMonHeaders
+
+        //  Detect if species has data
+        if (currTypes->name == '0')
+            continue;
+
+        //  Start printing species data
+        DebugPrintf("{");
+        //  Print item name
+        DebugPrintf("    \"typeName\": \"%S\",", currTypes->name);
+
+        //  Print Double Damage
+        DebugPrintf("    \"doubleDamage\": [");
+        for(u32 j = 0; j < NUMBER_OF_MON_TYPES){
+            if(gTypeEffectivenessTable[i][j] == 2)
+                DebugPrintf("                        \"%S\",", currTypes->description);  
+        }
+        DebugPrintf("                     ]");
+
+        //  Print Half Damage
+        DebugPrintf("    \"halfDamage\": [");
+        for(u32 j = 0; j < NUMBER_OF_MON_TYPES){
+            if(gTypeEffectivenessTable[i][j] == 0.5)
+                DebugPrintf("                        \"%S\",", currTypes->description);  
+        }
+        DebugPrintf("                     ]");
+
+        //  Print Can't Damage
+        DebugPrintf("    \"cantDamage\": [");
+        for(u32 j = 0; j < NUMBER_OF_MON_TYPES){
+            if(gTypeEffectivenessTable[i][j] == 0)
+                DebugPrintf("                        \"%S\",", currTypes->description);  
+        }
+        DebugPrintf("                     ]");
+
+        DebugPrintf("}");
+    }
+
+    Debug_DestroyMenu_Full(taskId);
+}*/
 
 #endif //DEBUG_OVERWORLD_MENU == TRUE
