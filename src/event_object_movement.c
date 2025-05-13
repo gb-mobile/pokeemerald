@@ -1177,7 +1177,7 @@ static void ClearObjectEvent(struct ObjectEvent *objectEvent)
     objectEvent->movementActionId = MOVEMENT_ACTION_NONE;
 }
 
-static void ClearAllObjectEvents(void)
+void ClearAllObjectEvents(void)
 {
     u8 i;
 
