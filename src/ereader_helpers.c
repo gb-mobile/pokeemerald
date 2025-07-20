@@ -52,13 +52,13 @@ static u16 sSavedRCnt;
 
 static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
     [0] = {
-        .name = __("マキエ$$$$$   "),
+        .name = _("SUE"),
         .facilityClass = FACILITY_CLASS_HEX_MANIAC,
         .unused = 0x1,
-        .speechBefore = { EC_WORD_PREPOSTEROUS, EC_WORD_CASE, EC_WORD_THERE, EC_WORD_TO_HER, EC_WORD_CHALLENGE, EC_WORD_JOKING },
-        .speechWin = { EC_WORD_HERS, EC_WORD_TRUMP_CARD, EC_MOVE2(SECRET_POWER), EC_WORD_USING, EC_WORD_WON, EC_WORD_EXCL_EXCL },
-        .speechLose = { EC_WORD_TO_HER, EC_WORD_WIN, EC_WORD_JOKING, EC_WORD_HIGHS, EC_WORD_SCARY, EC_WORD_ELLIPSIS_EXCL },
-        .speechAfter = { EC_WORD_IGNORANT, EC_WORD_SO, EC_WORD_TODAY, EC_WORD_NIGHTTIME, EC_WORD_YOU_RE, EC_WORD_ELLIPSIS_ELLIPSIS_ELLIPSIS },
+        .speechBefore = { EC_WORD_YOU_VE, EC_WORD_GOT, EC_WORD_SPIRIT, EC_WORD_TO, EC_WORD_CHALLENGE, EC_WORD_ME },
+        .speechWin = { EC_WORD_I, EC_WORD_WON, EC_WORD_WITH, EC_WORD_MY, EC_MOVE2(SECRET_POWER), EC_WORD_EXCL_EXCL },
+        .speechLose = { EC_WORD_YOU, EC_WORD_WON, EC_WORD_QUES, EC_WORD_HOW, EC_WORD_SCARY, EC_WORD_ELLIPSIS_EXCL },
+        .speechAfter = { EC_WORD_THIS, EC_WORD_NIGHT, EC_WORD_YOU, EC_WORD_WILL, EC_WORD_SEE, EC_WORD_ELLIPSIS_ELLIPSIS_ELLIPSIS },
         .mons = {
             [0] = DUMMY_HILL_MON,
             [1] = DUMMY_HILL_MON,
@@ -82,7 +82,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 1,
                 .personality = 0x80,
-                .nickname = __("マルノーム$$$$$$"),
+                .nickname = _("SWALOT"),
                 .friendship = MAX_FRIENDSHIP
             },
             [4] = {
@@ -104,7 +104,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x6,
-                .nickname = __("ドクケイル$$$$$$"),
+                .nickname = _("DUSTOX"),
                 .friendship = MAX_FRIENDSHIP
             },
             [5] = {
@@ -126,19 +126,19 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x2f,
-                .nickname = __("ジーランス$$$$$$"),
+                .nickname = _("RELICANTH"),
                 .friendship = MAX_FRIENDSHIP
             },
         }
     },
     [1] = {
-        .name = __("ハルヒト$$$$   "),
+        .name = _("WILBUR"),
         .facilityClass = FACILITY_CLASS_CAMPER,
         .unused = 0x1,
-        .speechBefore = { EC_MOVE2(BOUNCE), EC_WORD_AS_MUCH_AS, EC_EMPTY_WORD, EC_WORD_THEY_RE, EC_WORD_STRONG, EC_WORD_EXCL },
-        .speechWin = { EC_MOVE(FLY), EC_WORD_AS_MUCH_AS, EC_EMPTY_WORD, EC_WORD_THEY_RE, EC_WORD_HAPPY, EC_WORD_EXCL },
-        .speechLose = { EC_MOVE2(MINIMIZE), EC_WORD_AS_MUCH_AS, EC_EMPTY_WORD, EC_WORD_THEY_RE, EC_WORD_SAD, EC_WORD_EXCL },
-        .speechAfter = { EC_MOVE(BITE), EC_WORD_AS_MUCH_AS, EC_EMPTY_WORD, EC_WORD_THEY_RE, EC_WORD_ANGRY, EC_WORD_EXCL },
+        .speechBefore = { EC_WORD_I, EC_MOVE2(BOUNCE), EC_WORD_SO, EC_WORD_I_AM, EC_WORD_STRONG, EC_WORD_EXCL },
+        .speechWin = { EC_WORD_I, EC_MOVE(FLY), EC_WORD_WHEN, EC_WORD_I_AM, EC_WORD_HAPPY, EC_WORD_EXCL },
+        .speechLose = { EC_WORD_I, EC_MOVE2(MINIMIZE), EC_WORD_WHEN, EC_WORD_I_AM, EC_WORD_SAD, EC_WORD_EXCL },
+        .speechAfter = { EC_WORD_I, EC_MOVE2(BITE), EC_WORD_WHEN, EC_WORD_I, EC_WORD_LOSE, EC_WORD_EXCL },
         .mons = {
             [0] = DUMMY_HILL_MON,
             [1] = DUMMY_HILL_MON,
@@ -162,7 +162,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x8c,
-                .nickname = __("ノクタス$$$$$$$"),
+                .nickname = _("CACTURNE"),
                 .friendship = MAX_FRIENDSHIP
             },
             [4] = {
@@ -184,7 +184,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x80,
-                .nickname = __("オオスバメ$$$$$$"),
+                .nickname = _("SWELLOW"),
                 .friendship = MAX_FRIENDSHIP
             },
             [5] = {
@@ -206,19 +206,19 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x0,
-                .nickname = __("ナマズン$$$$$$$"),
+                .nickname = _("WHISCASH"),
                 .friendship = MAX_FRIENDSHIP
             },
         }
     },
     [2] = {
-        .name = __("メイコ$$$$$   "),
+        .name = _("JULIET"),
         .facilityClass = FACILITY_CLASS_SCHOOL_KID_F,
         .unused = 0x1,
-        .speechBefore = { EC_WORD_SHINE, EC_WORD_POKEMON, EC_WORD_RELEASE, EC_WORD_WAS, EC_MOVE2(FRUSTRATION), EC_WORD_WITHOUT },
-        .speechWin = { EC_WORD_SHINE, EC_WORD_POKEMON, EC_WORD_TO_HER, EC_MOVE2(PRESENT), EC_WORD_KNOWS, EC_WORD_WITHOUT },
-        .speechLose = { EC_WORD_THAT, EC_WORD_ABOVE, EC_WORD_LOST, EC_WORD_STORES, EC_WORD_JOKING, EC_WORD_ELLIPSIS_ELLIPSIS_ELLIPSIS },
-        .speechAfter = { EC_WORD_ENTERTAINING, EC_WORD_NONE, EC_WORD_HEY_QUES, EC_WORD_ALMOST, EC_WORD_EXCL, EC_EMPTY_WORD },
+        .speechBefore = { EC_WORD_AN, EC_WORD_ALT_COLOR, EC_WORD_POKEMON, EC_WORD_GOT, EC_WORD_AWAY, EC_WORD_EXCL },
+        .speechWin = { EC_WORD_GIVE, EC_WORD_ME, EC_WORD_AN, EC_WORD_ALT_COLOR, EC_WORD_POKEMON, EC_WORD_EXCL },
+        .speechLose = { EC_WORD_LOOKS, EC_WORD_LIKE, EC_WORD_I, EC_WORD_LOST, EC_WORD_ELLIPSIS_ELLIPSIS_ELLIPSIS, EC_EMPTY_WORD },
+        .speechAfter = { EC_WORD_HUMPH, EC_WORD_EXCL, EC_EMPTY_WORD, EC_WORD_HOW, EC_WORD_BORING, EC_WORD_EXCL },
         .mons = {
             [0] = DUMMY_HILL_MON,
             [1] = DUMMY_HILL_MON,
@@ -242,7 +242,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x3,
-                .nickname = __("エネコロロ$$$$$$"),
+                .nickname = _("DELCATTY"),
                 .friendship = MAX_FRIENDSHIP
             },
             [4] = {
@@ -264,7 +264,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 1,
                 .personality = 0x6,
-                .nickname = __("ロゼリア$$$$$$$"),
+                .nickname = _("ROSELIA"),
                 .friendship = MAX_FRIENDSHIP
             },
             [5] = {
@@ -286,19 +286,19 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x6,
-                .nickname = __("アゲハント$$$$$$"),
+                .nickname = _("BEAUTIFLY"),
                 .friendship = MAX_FRIENDSHIP
             },
         }
     },
     [3] = {
-        .name = __("ピエール$$$$   "),
+        .name = _("PIERRE"),
         .facilityClass = FACILITY_CLASS_GENTLEMAN,
         .unused = 0x1,
-        .speechBefore = { EC_WORD_SHE_WAS, EC_WORD_NO_1, EC_WORD_STRONG, EC_WORD_UNCLE, EC_WORD_THERE, EC_WORD_EXCL },
-        .speechWin = { EC_WORD_HAHAHA, EC_WORD_TEACHER, EC_WORD_BECOMES, EC_WORD_GIVE, EC_WORD_IS_IT_QUES, EC_EMPTY_WORD },
-        .speechLose = { EC_WORD_OUTSIDE, EC_WORD_UNCLE, EC_WORD_SURPRISE, EC_WORD_THESE, EC_WORD_HEY_QUES, EC_WORD_ELLIPSIS_EXCL },
-        .speechAfter = { EC_WORD_HE_S, EC_WORD_NO_1, EC_WORD_STRONG, EC_WORD_CHILDREN, EC_WORD_CAN_T, EC_WORD_EXCL_EXCL },
+        .speechBefore = { EC_WORD_I_AM, EC_WORD_OLD, EC_WORD_BUT, EC_WORD_I_AM, EC_WORD_STRONG, EC_WORD_EXCL },
+        .speechWin = { EC_WORD_I, EC_WORD_COULD, EC_WORD_TEACH, EC_WORD_YOU, EC_WORD_SOMETHING, EC_WORD_EXCL },
+        .speechLose = { EC_WORD_WOW, EC_WORD_EXCL, EC_WORD_THAT_WAS, EC_WORD_A, EC_WORD_SURPRISE, EC_WORD_ELLIPSIS_EXCL },
+        .speechAfter = { EC_WORD_YOU_RE, EC_WORD_STRONG, EC_WORD_FOR, EC_WORD_A, EC_WORD_KID, EC_WORD_EXCL_EXCL },
         .mons = {
             [0] = DUMMY_HILL_MON,
             [1] = DUMMY_HILL_MON,
@@ -322,7 +322,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 1,
                 .personality = 0x0,
-                .nickname = __("クチート$$$$$$$"),
+                .nickname = _("MAWILE"),
                 .friendship = MAX_FRIENDSHIP
             },
             [4] = {
@@ -344,7 +344,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x96,
-                .nickname = __("サメハダー$$$$$$"),
+                .nickname = _("SHARPEDO"),
                 .friendship = MAX_FRIENDSHIP
             },
             [5] = {
@@ -366,7 +366,7 @@ static const struct TrainerHillTrainer sTrainerHillTrainerTemplates_JP[] = {
                 .spDefenseIV = 5,
                 .abilityNum = 0,
                 .personality = 0x96,
-                .nickname = __("ジュペッタ$$$$$$"),
+                .nickname = _("BANETTE"),
                 .friendship = MAX_FRIENDSHIP
             },
         }
